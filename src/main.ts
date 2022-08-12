@@ -18,7 +18,7 @@ async function bootstrap() {
       .build()
     
     const document = SwaggerModule.createDocument(app, options)
-    SwaggerModule.setup('api-hub', app, document)
+    SwaggerModule.setup('zl-id', app, document)
   }
   await app.listen(Number(process.env.NODE_PORT) ||3000);
 }
