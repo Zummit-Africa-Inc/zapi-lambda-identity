@@ -82,4 +82,8 @@ export class AuthService {
       refresh: await this.jwtHelperService.signRefresh(refreshobject),
     };
   }
+
+  async getNewTokens(refreshToken: string) {
+    return await this.jwtHelperService.getNewTokens(refreshToken);
+  }
 }

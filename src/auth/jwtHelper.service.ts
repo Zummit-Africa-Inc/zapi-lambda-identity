@@ -77,4 +77,35 @@ export class JwtHelperService {
       );
     }
   }
+
+  async getNewTokens(refreshToken: string) {
+    try {
+      let payload = this.jwTokenService.verify(refreshToken, {
+        secret: await this.configService.get(jwtConstants.refresh_secret),
+      });
+      payload = {
+        id: payload.id,
+        ipAddress: payload.ipAddress,
+        userAgent: payload.userAgent,
+      };
+
+      let verified = await this.userRepo.findOne({
+        where: {
+          refreshToken: refreshToken,
+        },
+      });
+      if (verified) {
+        return {
+          access: await this.signAccess(payload),
+        };
+      } else throw new Error();
+    } catch (error) {
+      throw new BadRequestException(
+        ZaLaResponse.BadRequest(
+          'Invalid Refresh Token',
+          'Get the correct refresh token and try again',
+        ),
+      );
+    }
+  }
 }

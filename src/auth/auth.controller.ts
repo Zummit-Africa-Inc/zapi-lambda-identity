@@ -29,4 +29,10 @@ export class AuthController {
       ipAddress: req.ip,
     });
   }
+
+  @Post('/token')
+  @ApiOperation({ description: 'Get new access token' })
+  getAccess(@Body('refreshToken') token: string) {
+    return this.authService.getNewTokens(token);
+  }
 }
