@@ -60,7 +60,6 @@ export class AuthService {
         profileId: user.profileID,
         email: user.email,
         fullName: user.fullName,
-        history: user.history,
       },
       'Successfully logged in',
       201,
