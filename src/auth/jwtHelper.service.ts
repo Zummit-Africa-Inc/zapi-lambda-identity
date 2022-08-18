@@ -27,10 +27,16 @@ export class JwtHelperService {
     ipAddress: string;
     id: string;
   }) {
-    return this.jwTokenService.sign(payload, {
-      secret: await this.configService.get(jwtConstants.access_secret),
-      expiresIn: await this.configService.get(jwtConstants.access_time),
-    });
+    try {
+      return this.jwTokenService.sign(payload, {
+        secret: await this.configService.get(jwtConstants.access_secret),
+        expiresIn: await this.configService.get(jwtConstants.access_time),
+      });
+    } catch (error) {
+      throw new ForbiddenException(
+        ZaLaResponse.BadRequest(error.name, error.message, error.status),
+      );
+    }
   }
 
   async signRefresh(payload: {
@@ -38,24 +44,37 @@ export class JwtHelperService {
     ipAddress: string;
     id: string;
   }) {
-    let refreshToken = this.jwTokenService.sign(payload, {
-      secret: await this.configService.get(jwtConstants.refresh_secret),
-      expiresIn: await this.configService.get(jwtConstants.refresh_time),
-    });
+    try {
+      let refreshToken = this.jwTokenService.sign(payload, {
+        secret: await this.configService.get(jwtConstants.refresh_secret),
+        expiresIn: await this.configService.get(jwtConstants.refresh_time),
+      });
 
-    let user = await this.userRepo.findOne({ where: { id: payload.id } });
-    await this.userRepo.update(user.id, { refreshToken }).catch((err) => {
-      throw new BadRequestException(
-        ZaLaResponse.BadRequest('user not found', 'This user does not exist'),
+      let user = await this.userRepo.findOne({ where: { id: payload.id } });
+      await this.userRepo.update(user.id, { refreshToken }).catch((err) => {
+        throw new BadRequestException(
+          ZaLaResponse.BadRequest('user not found', 'This user does not exist'),
+        );
+      });
+      return refreshToken;
+    } catch (error) {
+      throw new ForbiddenException(
+        ZaLaResponse.BadRequest(error.name, error.message, error.status),
       );
-    });
-    return refreshToken;
+    }
   }
 
   async hashPassword(password: string, salt?: string) {
-    if (!salt) salt = randomBytes(32).toString('hex');
-    let hash = pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
-    let hashedPassword = `${salt}:${hash}`;
-    return hashedPassword;
+    try {
+      if (!salt) salt = randomBytes(32).toString('hex');
+
+      let hash = pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
+      let hashedPassword = `${salt}:${hash}`;
+      return hashedPassword;
+    } catch (error) {
+      throw new ForbiddenException(
+        ZaLaResponse.BadRequest(error.name, error.message, error.status),
+      );
+    }
   }
 }
