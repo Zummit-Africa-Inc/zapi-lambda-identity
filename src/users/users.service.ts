@@ -26,6 +26,6 @@ export class UsersService {
       );
     }
 
-    return user.history;
+    return user.histories;
   }
 }
