@@ -15,7 +15,10 @@ export class UsersService {
   ) {}
 
   async getLoginHistories(id: string) {
-    const user = await this.usersRepo.findOne({ where: { id: id } });
+    const user = await this.usersRepo.findOne({
+      where: { id: id },
+      relations: ['histories'],
+    });
     if (!user) {
       throw new NotFoundException(
         ZaLaResponse.NotFoundRequest(

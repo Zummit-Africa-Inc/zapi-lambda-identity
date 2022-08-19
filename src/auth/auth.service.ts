@@ -58,10 +58,9 @@ export class AuthService {
       ip_address: dto.userInfo.ip_address,
       browser_name: dto.userInfo.browser_name,
       os_name: dto.userInfo.os_name,
+      history: user,
     });
-    const history = await this.userHistoryRepo.save(createHistory);
-
-    await this.userRepo.update(user.id, { histories: [history] });
+    await this.userHistoryRepo.save(createHistory);
 
     return {
       ...tokens,
