@@ -7,6 +7,7 @@ import { Serialize } from '../common/interceptors/serialize.interceptor';
 import { SerializeUserDto } from './dto/serialize-user.dto';
 import { UserSigninDto } from './dto/user-signin.dto';
 import { Request } from 'express';
+import { ZaLaResponse } from 'src/common/helpers/response';
 
 @ApiTags('Auth-Users')
 @Controller('auth')
@@ -24,10 +25,12 @@ export class AuthController {
   @Post('/signin')
   @ApiOperation({ description: 'Sign in a User' })
   async signInUser(@Body() dto: UserSigninDto, @Req() req: Request) {
-    return this.authService.signin(dto, {
+    const userSignIn = this.authService.signin(dto, {
       userAgent: req.headers['user-agent'],
       ipAddress: req.ip,
     });
+
+    return ZaLaResponse.Ok<object>(userSignIn, 'Successfully logged in', 201);
   }
 
   @Post('/token')
