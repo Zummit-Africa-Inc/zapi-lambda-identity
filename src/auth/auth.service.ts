@@ -6,12 +6,15 @@ import { Repository } from 'typeorm';
 import { ZaLaResponse } from 'src/common/helpers/response';
 import { UserSigninDto } from './dto/user-signin.dto';
 import { JwtHelperService } from './jwtHelper.service';
+import { UserHistory } from './../entities/user-history.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(User)
     private userRepo: Repository<User>,
+    @InjectRepository(UserHistory)
+    private userHistoryRepo: Repository<UserHistory>,
     private jwtHelperService: JwtHelperService,
   ) {}
   async signup(user: UserSignupDto) {
@@ -49,21 +52,24 @@ export class AuthService {
     const tokens = await this.getNewRefreshAndAccessTokens(values, user);
 
     // add userInfo to the list of user history and return along in the response
-    await this.userRepo.update(user.id, {
-      history: [...user.history, dto.userInfo],
+    const createHistory = this.userHistoryRepo.create({
+      login_time: dto.userInfo.login_time,
+      country: dto.userInfo.country,
+      ip_address: dto.userInfo.ip_address,
+      browser_name: dto.userInfo.browser_name,
+      os_name: dto.userInfo.os_name,
     });
+    const history = await this.userHistoryRepo.save(createHistory);
 
-    return ZaLaResponse.Ok<object>(
-      {
-        ...tokens,
-        userId: user.id,
-        profileId: user.profileID,
-        email: user.email,
-        fullName: user.fullName,
-      },
-      'Successfully logged in',
-      201,
-    );
+    await this.userRepo.update(user.id, { histories: [history] });
+
+    return {
+      ...tokens,
+      userId: user.id,
+      profileId: user.profileID,
+      email: user.email,
+      fullName: user.fullName,
+    };
   }
 
   async getNewRefreshAndAccessTokens(
