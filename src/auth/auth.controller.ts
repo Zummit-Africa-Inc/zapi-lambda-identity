@@ -25,7 +25,7 @@ export class AuthController {
   @Post('/signin')
   @ApiOperation({ description: 'Sign in a User' })
   async signInUser(@Body() dto: UserSigninDto, @Req() req: Request) {
-    const userSignIn = this.authService.signin(dto, {
+    const userSignIn = await this.authService.signin(dto, {
       userAgent: req.headers['user-agent'],
       ipAddress: req.ip,
     });
