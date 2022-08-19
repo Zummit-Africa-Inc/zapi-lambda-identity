@@ -1,11 +1,8 @@
-import { BeforeInsert, Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { BeforeInsert, OneToMany, Entity, Column } from 'typeorm';
 import { Exclude } from 'class-transformer';
 import { randomBytes, pbkdf2Sync } from 'crypto';
 import { SharedEntity } from '../common/model/sharedEntity';
-import { UserInfoDto } from '../users/dto/user-info.dto';
-
-
-
+import { UserHistory } from './user-history.entity';
 
 @Entity()
 export class User extends SharedEntity {
@@ -28,12 +25,8 @@ export class User extends SharedEntity {
   @Exclude()
   refreshToken?: string;
 
-  @Column({
-    type: 'jsonb',
-    default: [],
-    nullable: true,
-  })
-  history: UserInfoDto[];
+  @OneToMany(() => UserHistory, (history) => history.history)
+  histories: UserHistory[];
 
   @BeforeInsert()
   public setPassword() {
