@@ -7,6 +7,7 @@ import { ZaLaResponse } from 'src/common/helpers/response';
 import { UserSigninDto } from './dto/user-signin.dto';
 import { JwtHelperService } from './jwtHelper.service';
 import { UserHistory } from './../entities/user-history.entity';
+import { userSignInType } from 'src/common/types';
 
 @Injectable()
 export class AuthService {
@@ -26,7 +27,12 @@ export class AuthService {
     });
     return newUser;
   }
-
+/**
+ * it sign in a user with a correct crendential
+ * @param dto - object containing signin crendentials
+ * @param values - an object conting userAgen and IpAddress of the user
+ * @returns {userSignInType} object containing information about the signin user
+ */
   async signin(
     dto: UserSigninDto,
     values: { userAgent: string; ipAddress: string },

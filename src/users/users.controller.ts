@@ -10,17 +10,12 @@ export class UsersController {
   constructor(private readonly userService: UsersService) {}
 
   @Get('history/:userId')
-  @ApiOkResponse({
-    type: [UserInfoDto],
-    description: 'Get all histories',
-    isArray: true,
-  })
   @ApiOperation({ description: 'Get user login histories' })
   async getLoginHistory(
     @Param('userId') userId: string,
   ): Promise<Ok<UserHistory[]>> {
     const histories = await this.userService.getLoginHistories(userId);
 
-    return ZaLaResponse.Ok(histories, 'User logged in histories', 201);
+    return ZaLaResponse.Ok(histories, 'Ok', 200);
   }
 }
