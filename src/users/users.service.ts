@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { UserInfoDto } from './dto/user-info.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { UserSignupDto } from '../auth/dto/user-signup.dto';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { User } from '../entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ZaLaResponse } from 'src/common/helpers/response';
@@ -15,20 +16,28 @@ export class UsersService {
   ) {}
 
   async getLoginHistories(id: string) {
-    const user = await this.usersRepo.findOne({
-      where: { id: id },
-      relations: ['histories'],
-    });
-    if (!user) {
-      throw new NotFoundException(
-        ZaLaResponse.NotFoundRequest(
-          'Internal server error',
-          'user not found',
-          '404',
-        ),
+    try {
+      // Query userHistories relation from user Table
+      const user = await this.usersRepo.findOne({
+        where: { id: id },
+        relations: ['histories'],
+      });
+
+      if (!user) {
+        throw new NotFoundException(
+          ZaLaResponse.NotFoundRequest(
+            'Internal server error',
+            'user not found',
+            '404',
+          ),
+        );
+      }
+
+      return user.histories;
+    } catch (error) {
+      throw new BadRequestException(
+        ZaLaResponse.BadRequest(error.name, error.message, error.status),
       );
     }
-
-    return user.histories;
   }
 }
