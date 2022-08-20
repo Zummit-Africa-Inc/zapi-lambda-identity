@@ -52,7 +52,7 @@ export class EmailVerificationService {
         text: text,
       },
     );
-    return await lastValueFrom(sendNotification.pipe());
+     await lastValueFrom(sendNotification.pipe())
   }
 
   /*

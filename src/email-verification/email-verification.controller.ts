@@ -1,6 +1,5 @@
 import { Controller, Param, Get } from '@nestjs/common';
 import { EmailVerificationService } from './email-verification.service';
-import { EmailTokenDto } from './dto/email-token.dto';
 import { ZaLaResponse } from 'src/common/helpers/response';
 
 @Controller('email-verification')

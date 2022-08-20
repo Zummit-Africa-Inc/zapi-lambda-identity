@@ -7,7 +7,6 @@ import { HttpModule } from '@nestjs/axios';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
 import { UserService } from '../user/user.service';
-import { JwtHelperService } from '../auth/jwtHelper.service';
 import { AuthService } from '../auth/auth.service';
 
 
@@ -21,7 +20,6 @@ import { AuthService } from '../auth/auth.service';
   providers: [
     EmailVerificationService,
     UserService,
-    JwtHelperService,
     AuthService,
   ],
   controllers: [EmailVerificationController],

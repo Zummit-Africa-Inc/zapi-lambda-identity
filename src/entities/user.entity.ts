@@ -2,7 +2,7 @@ import { BeforeInsert, Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 import { Exclude } from 'class-transformer';
 import { randomBytes, pbkdf2Sync } from 'crypto';
 import { SharedEntity } from '../common/model/sharedEntity';
-import { UserInfoDto } from '../users/dto/user-info.dto';
+import { UserInfo } from '../user/dto/userInfo.dto';
 
 
 
@@ -33,7 +33,7 @@ export class User extends SharedEntity {
     default: [],
     nullable: true,
   })
-  history: UserInfoDto[];
+  history: UserInfo[];
 
   @BeforeInsert()
   public setPassword() {
