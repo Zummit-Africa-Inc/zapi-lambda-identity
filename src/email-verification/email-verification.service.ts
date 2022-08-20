@@ -41,9 +41,7 @@ export class EmailVerificationService {
     const notification_url =  `${this.configService.get<string>(
         configConstant.baseUrls.notificationService
       )}/email/send-mail`
-      console.log(notification_url);
       
-
     const sendNotification = await this.httpService.post(
       notification_url,
       {
