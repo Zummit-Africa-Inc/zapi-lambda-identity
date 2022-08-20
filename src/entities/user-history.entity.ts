@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { SharedEntity } from '../common/model/sharedEntity';
 import { User } from './user.entity';
 
@@ -20,5 +20,6 @@ export class UserHistory extends SharedEntity {
   os_name?: string;
 
   @ManyToOne(() => User, (user) => user.histories)
-  history: User;
+  @JoinColumn({ name: 'userId' })
+  history: UserHistory;
 }
