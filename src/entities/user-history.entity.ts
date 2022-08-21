@@ -19,6 +19,9 @@ export class UserHistory extends SharedEntity {
   @Column({ nullable: true })
   os_name?: string;
 
+  @Column({ nullable: true })
+  userId?: string;
+
   @ManyToOne(() => User, (user) => user.histories)
   @JoinColumn({ name: 'userId' })
   history: UserHistory;

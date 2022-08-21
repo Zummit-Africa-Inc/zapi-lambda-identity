@@ -24,7 +24,7 @@ export class UsersService {
   async getLoginHistories(id: string): Promise<UserHistory[]> {
     try {
       const history = await this.userHistoryRepo.find({
-        where: { userId:id},
+        where: { userId: id },
       });
 
       if (!history) {
