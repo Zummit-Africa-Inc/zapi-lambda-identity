@@ -14,5 +14,6 @@ export class ChangePasswordDto {
     @Matches(/((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/, 
         {message: 'Password must contain the following: a capital letter, a number and a special character'}
     )
+    @ApiProperty()
     newPassword: string;
 }
