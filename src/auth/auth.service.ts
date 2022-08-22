@@ -28,9 +28,7 @@ export class AuthService {
     return newUser
   }
 
-  /**
-   * User sign out
-   */
+  
   async signout(refreshToken: string) {
     let check = await this.userRepo.findOne({ where: { refreshToken: refreshToken }})
 
@@ -49,9 +47,7 @@ export class AuthService {
     return ZaLaResponse.Ok('', 'Logged out successfully', 201)
   }
 
-  /**
-   * Change Password
-   */
+  
   async changepassword(id:string, dto: ChangePasswordDto) {
     const user = await this.userRepo.findOne({ where: { id: id}})
     const currentPasswordHash = user.password;

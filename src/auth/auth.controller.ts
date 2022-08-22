@@ -2,10 +2,11 @@ import { Controller, Post, Body, Param, Patch } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UserSignupDto } from './dto/user-signup.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
 import { Serialize } from '../common/interceptors/serialize.interceptor';
 import { SerializeUserDto } from './dto/serialize-user.dto';
 import { ChangePasswordDto } from 'src/users/dto/change-password.dto';
+import { UserDto } from 'src/users/dto/user.dto';
+import { ZaLaResponse } from 'src/common/helpers/response';
 
 
 @ApiTags("Auth-Users")
@@ -29,10 +30,12 @@ export class AuthController {
     return await this.authService.signout(refreshToken);
   }
   
+  @Serialize(UserDto)
   @Patch('/change-password/:id')
   @ApiOperation({description: 'User password change'})
   async changePassword(@Param('id') id:string, @Body() body:ChangePasswordDto) {
-    return await this.authService.changepassword(id, body)
+    await this.authService.changepassword(id, body)
+    return ZaLaResponse.Ok('Password updated', '200');
   }
 
 }
