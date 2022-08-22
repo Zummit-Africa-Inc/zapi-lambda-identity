@@ -57,8 +57,7 @@ export class AuthService {
       user.password.split(':')[0]
     );
 
-    const comparePassword = oldPasswordHash == currentPasswordHash
-    if(!comparePassword) {
+    if(currentPasswordHash !== oldPasswordHash){
       throw new BadRequestException(
         ZaLaResponse.BadRequest(
           `Access Denied!`,
@@ -71,7 +70,7 @@ export class AuthService {
     const newPasswordHash = await this.jwtHelperService.hashPassword(
       dto.newPassword,
       user.password.split(':')[0]
-    );
-    return await this.userRepo.update(id, {password: newPasswordHash})
+    )
+    return await this.userRepo.update(id, {password:newPasswordHash})
   }
 }
