@@ -8,6 +8,7 @@ import { UserSigninDto } from './dto/user-signin.dto';
 import { JwtHelperService } from './jwtHelper.service';
 import { UserHistory } from './../entities/user-history.entity';
 import { userSignInType } from 'src/common/types';
+import { EmailVerificationService } from '../email-verification/email-verification.service';
 
 @Injectable()
 export class AuthService {
@@ -17,22 +18,27 @@ export class AuthService {
     @InjectRepository(UserHistory)
     private userHistoryRepo: Repository<UserHistory>,
     private jwtHelperService: JwtHelperService,
+    private emailVerificationService: EmailVerificationService,
   ) {}
+
   async signup(user: UserSignupDto) {
     const userdata = Object.assign(new User(), user);
     const newUser = await this.userRepo.save(userdata).catch(async (e) => {
+      await this.emailVerificationService.resendVerificationLink(user.email);
       throw new BadRequestException(
         ZaLaResponse.BadRequest('Duplicate Values', 'The Email already exists'),
       );
     });
+    await this.emailVerificationService.sendVerificationLink(newUser.email);
     return newUser;
   }
-/**
- * it sign in a user with a correct crendential
- * @param dto - object containing signin crendentials
- * @param values - an object conting userAgen and IpAddress of the user
- * @returns {userSignInType} object containing information about the signin user
- */
+
+  /**
+   * it sign in a user with a correct crendential
+   * @param dto - object containing signin crendentials
+   * @param values - an object conting userAgen and IpAddress of the user
+   * @returns {userSignInType} object containing information about the signin user
+   */
   async signin(
     dto: UserSigninDto,
     values: { userAgent: string; ipAddress: string },
