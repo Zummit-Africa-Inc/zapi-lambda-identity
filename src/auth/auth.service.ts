@@ -30,21 +30,21 @@ export class AuthService {
 
   
   async signout(refreshToken: string) {
-    let check = await this.userRepo.findOne({ where: { refreshToken: refreshToken }})
+    const check = await this.userRepo.findOne({
+      where: { refreshToken: refreshToken }
+    })
 
-    if (!check) {
-      throw new BadRequestException(
-        ZaLaResponse.BadRequest(
-          'Invalid Refresh Token',
-          'Get the correct refresh token and try again'
-        )
+    if (check) {
+      await this.userRepo.update(
+        { refreshToken: refreshToken}, {refreshToken: null}
       );
     }
-
-    await this.userRepo.update(
-      { refreshToken: refreshToken}, {refreshToken: null}
+    throw new BadRequestException(
+      ZaLaResponse.BadRequest(
+        'Invalid Refresh Token',
+        'Get the correct refresh token and try again'
+      )
     );
-    return ZaLaResponse.Ok('', 'Logged out successfully', 201)
   }
 
   
