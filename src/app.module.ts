@@ -34,7 +34,7 @@ const RabbitMQService = {
     TypeOrmModule.forRoot(AppDataSource.options)
   ],
   controllers: [AppController],
-  providers: [AppService, RabbitMQService],
+  providers: [AppService, RabbitMQService, ConfigService],
   exports: [RabbitMQService],
 })
 export class AppModule {}
