@@ -20,6 +20,11 @@ export const configConstant = {
     reset_time: 'RESET_TIME',
     reset_secret: 'RESET_SECRET',
     verify_secret:'JWT_VERIFICATION_TOKEN_SECRET'
+  },
+  amq: {
+    url: 'RABBITMQ_URL',
+    queue: 'RABBITMQ_QUEUE',
+    durable: 'RABBITMQ_DURABLE'
   }
   
 };
