@@ -5,7 +5,7 @@ import { AuthModule } from './auth/auth.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppDataSource } from 'ormconfig';
 import { UserModule } from './user/user.module';
-import { ConfigService } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientProxyFactory, Transport } from '@nestjs/microservices';
 import { configConstant } from './common/constants/config.constant';
 
@@ -31,10 +31,11 @@ const RabbitMQService = {
   imports: [
     UserModule, 
     AuthModule,
-    TypeOrmModule.forRoot(AppDataSource.options)
+    TypeOrmModule.forRoot(AppDataSource.options),
+    ConfigModule.forRoot(),
   ],
   controllers: [AppController],
-  providers: [AppService, RabbitMQService, ConfigService],
+  providers: [AppService, RabbitMQService],
   exports: [RabbitMQService],
 })
 export class AppModule {}
