@@ -17,7 +17,7 @@ const RabbitMQService = {
       transport: Transport.RMQ,
       options: {
         urls: [configService.get(configConstant.amq.url)],
-        queue: configService.get(configConstant.amq.queue),
+        queue: configService.get(configConstant.amq.identity_queue),
         queueOptions: {
           durable: true,
         },
