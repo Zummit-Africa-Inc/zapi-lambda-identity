@@ -7,8 +7,8 @@ export class UserHistory extends SharedEntity {
   @Column({ nullable: true })
   login_time?: string;
 
-  @Column({ nullable: true })
-  country?: string;
+  @Column('simple-json', { nullable: true })
+  country?: { longitude: string; latitude: string };
 
   @Column({ nullable: true })
   ip_address?: string;

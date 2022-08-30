@@ -8,7 +8,7 @@ export class UserInfo {
 
   @IsString()
   @ApiProperty()
-  country: string;
+  country: { longitude: string; latitude: string };
 
   @IsString()
   @ApiProperty()
