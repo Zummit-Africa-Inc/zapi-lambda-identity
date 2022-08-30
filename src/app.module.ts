@@ -29,10 +29,12 @@ const RabbitMQService = {
 @Global()
 @Module({
   imports: [
-    UserModule, 
+    UsersModule,
     AuthModule,
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     TypeOrmModule.forRoot(AppDataSource.options),
-    ConfigModule.forRoot(),
   ],
   controllers: [AppController],
   providers: [AppService, RabbitMQService],

@@ -1,24 +1,20 @@
-import {
-  Controller,
-  Get,
-  Param,
-} from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { UserDto } from '../user/dto/user.dto';
-import { Serialize } from '../common/interceptors/serialize.interceptor';
+import { Controller, Get, Param } from '@nestjs/common';
 import { UserService } from './user.service';
+import { ApiOperation } from '@nestjs/swagger';
+import { UserHistory } from './../entities/user-history.entity';
+import { ZaLaResponse, Ok } from 'src/common/helpers/response';
 
-@ApiTags('Users')
-@Controller('user')
+@Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Serialize(UserDto)
-  @Get('/:userId')
-  @ApiOperation({ description: 'Find a user by Id' })
-  async findUserById(@Param('userId') userId: string) {
-    return await this.userService.findById(userId);
-  }
+  @Get('history/:userId')
+  @ApiOperation({ description: 'Get user login histories' })
+  async getLoginHistory(
+    @Param('userId') userId: string,
+  ): Promise<Ok<UserHistory[]>> {
+    const histories = await this.userService.getLoginHistories(userId);
 
- 
+    return ZaLaResponse.Ok(histories, 'Ok', 200);
+  }
 }

@@ -33,24 +33,21 @@ export class EmailVerificationService {
     });
 
     const url = `${this.configService.get(
-      configConstant.baseUrls.identityService
+      configConstant.baseUrls.identityService,
     )}/email-verification/${token}`;
     const text = `Welcome to Zummit. To confirm your mail, please click the link below:\n\n\n ${url}`;
 
     // An axios request to the notification service
-    const notification_url =  `${this.configService.get<string>(
-        configConstant.baseUrls.notificationService
-      )}/email/send-mail`
-      
-    const sendNotification = await this.httpService.post(
-      notification_url,
-      {
-        email: email,
-        subject: 'Confirm Email',
-        text: text,
-      },
-    );
-     await lastValueFrom(sendNotification.pipe())
+    const notification_url = `${this.configService.get<string>(
+      configConstant.baseUrls.notificationService,
+    )}/email/send-mail`;
+
+    const sendNotification = await this.httpService.post(notification_url, {
+      email: email,
+      subject: 'Confirm Email',
+      text: text,
+    });
+    await lastValueFrom(sendNotification.pipe());
   }
 
   /*
@@ -69,8 +66,10 @@ export class EmailVerificationService {
 
       // this a temporary return value ... when the profile entity in the core service is set up,
       // this will be implemented fully
-      const user = await this.usersRepo.findOne({where: {email: payload.email}})
-      return user
+      const user = await this.usersRepo.findOne({
+        where: { email: payload.email },
+      });
+      return user;
       //Create a user profile once email is verified
       // return await this.createUserProfile(payload.email);
     } catch (error) {
