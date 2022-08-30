@@ -26,28 +26,32 @@ export class EmailVerificationService {
    * return - return a http request to send email notification
    */
   async sendVerificationLink(email: string) {
-    const payload: VerifyToken = { email };
-    const token = this.jwtService.sign(payload, {
-      secret: this.configService.get(configConstant.jwt.verify_secret),
-      expiresIn: this.configService.get(configConstant.jwt.access_time),
-    });
+    try {
+      const payload: VerifyToken = { email };
+      const token = this.jwtService.sign(payload, {
+        secret: this.configService.get(configConstant.jwt.verify_secret),
+        expiresIn: this.configService.get(configConstant.jwt.access_time),
+      });
 
-    const url = `${this.configService.get(
-      configConstant.baseUrls.identityService,
-    )}/email-verification/${token}`;
-    const text = `Welcome to Zummit. To confirm your mail, please click the link below:\n\n\n ${url}`;
+      const url = `${this.configService.get(
+        configConstant.baseUrls.identityService,
+      )}/email-verification/${token}`;
+      const text = `Welcome to Zummit. To confirm your mail, please click the link below:\n\n\n ${url}`;
 
-    // An axios request to the notification service
-    const notification_url = `${this.configService.get<string>(
-      configConstant.baseUrls.notificationService,
-    )}/email/send-mail`;
+      // An axios request to the notification service
+      const notification_url = `${this.configService.get<string>(
+        configConstant.baseUrls.notificationService,
+      )}/email/send-mail`;
 
-    const sendNotification = await this.httpService.post(notification_url, {
-      email: email,
-      subject: 'Confirm Email',
-      text: text,
-    });
-    await lastValueFrom(sendNotification.pipe());
+      const sendNotification = await this.httpService.post(notification_url, {
+        email: email,
+        subject: 'Confirm Email',
+        text: text,
+      });
+      await lastValueFrom(sendNotification.pipe());
+    } catch (error) {
+      console.log(error.message);
+    }
   }
 
   /*
@@ -94,13 +98,17 @@ export class EmailVerificationService {
    * @Params: email - find user by email property
    */
   async resendVerificationLink(email: string) {
-    const user = await this.usersRepo.findOne({
-      where: {
-        email,
-      },
-    });
-    if (!user.isEmailVerified) {
-      this.sendVerificationLink(email);
+    try {
+      const user = await this.usersRepo.findOne({
+        where: {
+          email,
+        },
+      });
+      if (!user.isEmailVerified) {
+        this.sendVerificationLink(email);
+      }
+    } catch (error) {
+      console.log(error.message);
     }
   }
 
