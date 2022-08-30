@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Inject } from '@nestjs/common';
 import { UserSignupDto } from './dto/user-signup.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../entities/user.entity';
@@ -7,7 +7,6 @@ import { ZaLaResponse } from 'src/common/helpers/response';
 import { UserSigninDto } from './dto/user-signin.dto';
 import { JwtHelperService } from './jwtHelper.service';
 import { UserHistory } from './../entities/user-history.entity';
-import { userSignInType } from 'src/common/types';
 import { EmailVerificationService } from '../email-verification/email-verification.service';
 
 @Injectable()
@@ -23,13 +22,17 @@ export class AuthService {
 
   async signup(user: UserSignupDto) {
     const userdata = Object.assign(new User(), user);
-    const newUser = await this.userRepo.save(userdata).catch(async (e) => {
-      await this.emailVerificationService.resendVerificationLink(user.email);
+    const newUser = await this.userRepo.save(userdata).catch(async (error) => {
+      this.emailVerificationService.resendVerificationLink(user.email);
       throw new BadRequestException(
-        ZaLaResponse.BadRequest('Duplicate Values', 'The Email already exists'),
+        ZaLaResponse.BadRequest(
+          'Duplicate Values',
+          'The Email already exists',
+          error.errorCode,
+        ),
       );
     });
-    await this.emailVerificationService.sendVerificationLink(newUser.email);
+    this.emailVerificationService.sendVerificationLink(newUser.email);
     return newUser;
   }
 
@@ -58,7 +61,7 @@ export class AuthService {
         user.password.split(':')[0],
       );
 
-      let isPasswordCorrect = hash == user.password;
+      const isPasswordCorrect = hash == user.password;
       if (!isPasswordCorrect)
         throw new BadRequestException(
           ZaLaResponse.BadRequest('Access Denied!', 'Incorrect Credentials'),
