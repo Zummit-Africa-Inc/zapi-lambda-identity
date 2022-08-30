@@ -1,4 +1,4 @@
-import { Expose } from "class-transformer"
+import { Expose, Exclude } from "class-transformer"
 
 export class SerializeUserDto {
     @Expose()
@@ -13,3 +13,4 @@ export class SerializeUserDto {
     @Expose()
     profileID: string
 }
+

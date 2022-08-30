@@ -22,7 +22,6 @@ export class User extends SharedEntity {
   profileID?: string;
 
   @Column({ unique: true, nullable: true })
-  @Exclude()
   refreshToken?: string;
 
   @OneToMany(() => UserHistory, (history) => history.history)
@@ -31,9 +30,7 @@ export class User extends SharedEntity {
   @BeforeInsert()
   public setPassword() {
     let salt = randomBytes(32).toString('hex');
-    let hash = pbkdf2Sync(this.password, salt, 1000, 64, 'sha512').toString(
-      'hex',
-    );
+    let hash = pbkdf2Sync(this.password, salt, 1000, 64, 'sha512').toString('hex');
     let hashedPassword = `${salt}:${hash}`;
     this.password = hashedPassword;
     return this.password;
