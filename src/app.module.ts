@@ -4,7 +4,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppDataSource } from 'ormconfig';
-import { UserModule } from './user/user.module';
+import { UsersModule } from './user/user.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientProxyFactory, Transport } from '@nestjs/microservices';
 import { configConstant } from './common/constants/config.constant';
@@ -22,10 +22,10 @@ const RabbitMQService = {
           durable: true,
         },
       },
-    })
+    });
   },
-  inject: [ConfigService]
-}
+  inject: [ConfigService],
+};
 @Global()
 @Module({
   imports: [
