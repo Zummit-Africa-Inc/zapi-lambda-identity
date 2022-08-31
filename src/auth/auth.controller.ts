@@ -1,10 +1,12 @@
-import { Controller, Post, Body, Req } from '@nestjs/common';
+import { Controller, Post, Body, Req, Param, Patch } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UserSignupDto } from './dto/user-signup.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { Serialize } from '../common/interceptors/serialize.interceptor';
 import { SerializeUserDto } from './dto/serialize-user.dto';
 import { UserSigninDto } from './dto/user-signin.dto';
+import { UserDto } from '../user/dto/user.dto';
 import { Request } from 'express';
 import { Ok, ZaLaResponse } from 'src/common/helpers/response';
 import { userSignInType } from 'src/common/types';
@@ -34,6 +36,21 @@ export class AuthController {
     });
 
     return ZaLaResponse.Ok(userSignIn, 'Successfully logged in', 201);
+  }
+
+  @Post('/signout')
+  @ApiOperation({description: 'Sign out a user'})
+  async signOutUser(@Body('refreshToken') refresToken:string) {
+    await this.authService.signout(refresToken);
+    return ZaLaResponse.Ok('', 'Logged out successfully', '201')
+  }
+
+  @Serialize(UserDto)
+  @Patch('/change-password/:id')
+  @ApiOperation({description: 'User password change'})
+  async changePassword(@Param('id') id:string, @Body() body:ChangePasswordDto) {
+    await this.authService.changepassword(id, body)
+    return ZaLaResponse.Ok('Password updated', '200');
   }
 
   @Post('/token')

@@ -5,6 +5,7 @@ import { User } from '../entities/user.entity';
 import { Repository } from 'typeorm';
 import { ZaLaResponse } from 'src/common/helpers/response';
 import { UserSigninDto } from './dto/user-signin.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { JwtHelperService } from './jwtHelper.service';
 import { UserHistory } from './../entities/user-history.entity';
 import { EmailVerificationService } from '../email-verification/email-verification.service';
@@ -39,7 +40,7 @@ export class AuthService {
   /**
    * it sign in a user with a correct crendential
    * @param dto - object containing signin crendentials
-   * @param values - an object conting userAgen and IpAddress of the user
+   * @param values - an object containing userAgent and IpAddress of the user
    * @returns {userSignInType} object containing information about the signin user
    */
   async signin(
@@ -67,7 +68,7 @@ export class AuthService {
           ZaLaResponse.BadRequest('Access Denied!', 'Incorrect Credentials'),
         );
 
-      // generate access and refrest token for successfull logedIn user
+      // generate access and refrest token for successful logedIn user
       const tokens = await this.getNewRefreshAndAccessTokens(values, user);
 
       // add userInfo to the list of user history
@@ -95,6 +96,22 @@ export class AuthService {
     }
   }
 
+  async signout(refreshToken: string) {
+    const check = await this.userRepo.findOne({
+      where: { refreshToken: refreshToken }
+    })
+
+    if(check) {
+      await this.userRepo.update({refreshToken: refreshToken}, {refreshToken: null})
+    }
+    throw new BadRequestException(
+      ZaLaResponse.BadRequest(
+        'Invalid Refresh Token',
+        'Get the correct refresh token and try again'
+      )
+    )
+  }
+
   async getNewRefreshAndAccessTokens(
     values: { userAgent: string; ipAddress: string },
     user,
@@ -120,5 +137,31 @@ export class AuthService {
 
   async getNewTokens(refreshToken: string) {
     return await this.jwtHelperService.getNewTokens(refreshToken);
+  }
+
+  async changepassword(id:string, dto: ChangePasswordDto) {
+    const user = await this.userRepo.findOne({ where: { id: id}})
+    const currentPasswordHash = user.password;
+
+    const oldPasswordHash = await this.jwtHelperService.hashPassword(
+      dto.oldPassword,
+      user.password.split(':')[0]
+    );
+
+    if(currentPasswordHash !== oldPasswordHash){
+      throw new BadRequestException(
+        ZaLaResponse.BadRequest(
+          `Access Denied!`,
+          `The password provided doesn't match`,
+          `401`
+        ),
+      );
+    }
+
+    const newPasswordHash = await this.jwtHelperService.hashPassword(
+      dto.newPassword,
+      user.password.split(':')[0]
+    )
+    return await this.userRepo.update(id, {password:newPasswordHash})
   }
 }
