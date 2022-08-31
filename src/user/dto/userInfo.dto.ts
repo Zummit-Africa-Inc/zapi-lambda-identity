@@ -1,12 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString } from 'class-validator';
+import { IsObject, IsString } from 'class-validator';
 
 export class UserInfo {
   @ApiProperty()
   @IsString()
   login_time: string;
 
-  @IsString()
+  @IsObject()
   @ApiProperty()
   country: { longitude: string; latitude: string };
 
