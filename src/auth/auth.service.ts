@@ -124,43 +124,57 @@ export class AuthService {
   }
 
   async forgotPassword(email: string): Promise<string[]>{
-    const user: User = await this.userRepo.findOne({where: {email}})
-    if(!user){
-      throw new NotFoundException(
-        ZaLaResponse.NotFoundRequest(
-          'Not found',
-          'email does not exist on the server',
-          '404',
+    try {
+      const user: User = await this.userRepo.findOne({where: {email}})
+      if(!user){
+        throw new NotFoundException(
+          ZaLaResponse.NotFoundRequest(
+            'Not found',
+            'email does not exist on the server',
+            '404',
+          )
         )
-      )
-    }
-  
-    const emailPayload = {
-    userId: user.id,
-    userEmail: user.email,
-    username: user.fullName
-    }
+      }
+    
+      const emailPayload = {
+      userId: user.id,
+      userEmail: user.email,
+      username: user.fullName
+      }
 
-    const success = await this.emailVerificationService.sendResetPasswordLink(emailPayload)
+      const success = await this.emailVerificationService.sendResetPasswordLink(emailPayload)
 
-    return  [user.id, success]
+      return  [user.id, success]
+    } catch (error) {
+      throw new BadRequestException(
+        ZaLaResponse.BadRequest(error.name, error.message, error.status),
+      );
+    }
+    
   }
 
   async resetPassword(authorizationToken: string, body: PasswordResetDto): Promise<User>{
-    const token = authorizationToken.split(' ')[1]
-    const {id} = await this.jwtHelperService.verifyReset(token)
-    const user: User = await this.userRepo.findOne({where: {id}})
-    if(!user){
-      throw new NotFoundException(
-        ZaLaResponse.NotFoundRequest('Not Found Error','User does not exist on the server', '404'),
+    try {
+      const token = authorizationToken.split(' ')[1]
+      const {id} = await this.jwtHelperService.verifyReset(token)
+      const user: User = await this.userRepo.findOne({where: {id}})
+      if(!user){
+        throw new NotFoundException(
+          ZaLaResponse.NotFoundRequest('Not Found Error','User does not exist on the server', '404'),
+        );
+      }
+      var passwordPayload ={
+        newPassword: body.password, 
+        oldPassword: user.password
+      }
+      const hashedPassword = await this.jwtHelperService.newPasswordHash(passwordPayload)
+      await this.userRepo.update(id, {password: hashedPassword})
+      return user 
+    } catch (error) {
+      throw new BadRequestException(
+        ZaLaResponse.BadRequest(error.name, error.message, error.status),
       );
     }
-    var passwordPayload ={
-      newPassword: body.password, 
-      oldPassword: user.password
-    }
-    const hashedPassword = await this.jwtHelperService.newPasswordHash(passwordPayload)
-    await this.userRepo.update(id, {password: hashedPassword})
-    return user 
+    
   }
 }
