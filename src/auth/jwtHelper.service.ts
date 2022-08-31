@@ -144,7 +144,7 @@ export class JwtHelperService {
       
       return resetToken;
     } catch (error) {
-      throw new ForbiddenException(
+      throw new BadRequestException(
         ZaLaResponse.BadRequest(error.name, error.message, error.status),
       );
     }
