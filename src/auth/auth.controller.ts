@@ -45,7 +45,6 @@ export class AuthController {
     return ZaLaResponse.Ok('', 'Logged out successfully', '201')
   }
 
-  @Serialize(UserDto)
   @Patch('/change-password/:id')
   @ApiOperation({description: 'User password change'})
   async changePassword(@Param('id') id:string, @Body() body:ChangePasswordDto) {
