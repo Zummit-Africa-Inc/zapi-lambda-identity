@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, Inject } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { UserSignupDto } from './dto/user-signup.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../entities/user.entity';
@@ -8,6 +8,7 @@ import { UserSigninDto } from './dto/user-signin.dto';
 import { JwtHelperService } from './jwtHelper.service';
 import { UserHistory } from './../entities/user-history.entity';
 import { EmailVerificationService } from '../email-verification/email-verification.service';
+import { PasswordResetDto } from '../user/dto/password-reset.dto';
 
 @Injectable()
 export class AuthService {
@@ -32,7 +33,7 @@ export class AuthService {
         ),
       );
     });
-    this.emailVerificationService.sendVerificationLink(newUser.email);
+    await this.emailVerificationService.sendVerificationLink(newUser.email);
     return newUser;
   }
 
@@ -120,5 +121,60 @@ export class AuthService {
 
   async getNewTokens(refreshToken: string) {
     return await this.jwtHelperService.getNewTokens(refreshToken);
+  }
+
+  async forgotPassword(email: string): Promise<string[]>{
+    try {
+      const user: User = await this.userRepo.findOne({where: {email}})
+      if(!user){
+        throw new NotFoundException(
+          ZaLaResponse.NotFoundRequest(
+            'Not found',
+            'email does not exist on the server',
+            '404',
+          )
+        )
+      }
+    
+      const emailPayload = {
+      userId: user.id,
+      userEmail: user.email,
+      username: user.fullName
+      }
+
+      const success = await this.emailVerificationService.sendResetPasswordLink(emailPayload)
+
+      return  [user.id, success]
+    } catch (error) {
+      throw new BadRequestException(
+        ZaLaResponse.BadRequest(error.name, error.message, error.status),
+      );
+    }
+    
+  }
+
+  async resetPassword(authorizationToken: string, body: PasswordResetDto): Promise<User>{
+    try {
+      const token = authorizationToken.split(' ')[1]
+      const {id} = await this.jwtHelperService.verifyReset(token)
+      const user: User = await this.userRepo.findOne({where: {id}})
+      if(!user){
+        throw new NotFoundException(
+          ZaLaResponse.NotFoundRequest('Not Found Error','User does not exist on the server', '404'),
+        );
+      }
+      var passwordPayload ={
+        newPassword: body.password, 
+        oldPassword: user.password
+      }
+      const hashedPassword = await this.jwtHelperService.newPasswordHash(passwordPayload)
+      await this.userRepo.update(id, {password: hashedPassword})
+      return user 
+    } catch (error) {
+      throw new BadRequestException(
+        ZaLaResponse.BadRequest(error.name, error.message, error.status),
+      );
+    }
+    
   }
 }
