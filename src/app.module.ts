@@ -5,27 +5,13 @@ import { AuthModule } from './auth/auth.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppDataSource } from 'ormconfig';
 import { UsersModule } from './user/user.module';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ClientProxyFactory, Transport } from '@nestjs/microservices';
-import { configConstant } from './common/constants/config.constant';
+import { ConfigModule } from '@nestjs/config';
+import { queue } from './common/Micoservices/RabbitMqQueues';
 
-// Create rabbitMQ service to be used in other module
-const RabbitMQService = {
-  provide: 'IDENTITY_SERVICE',
-  useFactory: (configService: ConfigService) => {
-    return ClientProxyFactory.create({
-      transport: Transport.RMQ,
-      options: {
-        urls: [configService.get(configConstant.amq.url)],
-        queue: configService.get(configConstant.amq.identity_queue),
-        queueOptions: {
-          durable: true,
-        },
-      },
-    });
-  },
-  inject: [ConfigService],
-};
+/* Creating a microservice client for the queue. */
+const IdentityService = queue('IDENTITY_SERVICE', process.env.IDENTITY_QUEUE);
+const NotifyService = queue('NOTIFY_SERVICE', process.env.NOTIFY_QUEUE);
+
 @Global()
 @Module({
   imports: [
@@ -37,7 +23,7 @@ const RabbitMQService = {
     TypeOrmModule.forRoot(AppDataSource.options),
   ],
   controllers: [AppController],
-  providers: [AppService, RabbitMQService],
-  exports: [RabbitMQService],
+  providers: [AppService, IdentityService, NotifyService],
+  exports: [IdentityService, NotifyService],
 })
 export class AppModule {}
