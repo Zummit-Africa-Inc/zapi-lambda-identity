@@ -101,15 +101,16 @@ export class AuthService {
       where: { refreshToken: refreshToken }
     })
 
-    if(check) {
-      await this.userRepo.update({refreshToken: refreshToken}, {refreshToken: null})
-    }
-    throw new BadRequestException(
-      ZaLaResponse.BadRequest(
-        'Invalid Refresh Token',
-        'Get the correct refresh token and try again'
+    if(!check) {
+      throw new BadRequestException(
+        ZaLaResponse.BadRequest(
+          'Invalid Refresh Token',
+          'Get the correct refresh token and try again'
+        )
       )
-    )
+    }
+    const removeToken = await this.userRepo.update({refreshToken: refreshToken}, {refreshToken: null})
+    return removeToken;
   }
 
   async getNewRefreshAndAccessTokens(

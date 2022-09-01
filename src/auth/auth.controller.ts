@@ -40,8 +40,8 @@ export class AuthController {
 
   @Post('/signout')
   @ApiOperation({description: 'Sign out a user'})
-  async signOutUser(@Body('refreshToken') refresToken:string) {
-    await this.authService.signout(refresToken);
+  async signOutUser(@Body('refreshToken') refreshToken:string) {
+    await this.authService.signout(refreshToken);
     return ZaLaResponse.Ok('', 'Logged out successfully', '201')
   }
 
