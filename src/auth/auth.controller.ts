@@ -1,4 +1,12 @@
-import { Controller, Post, Body, Req, Param, Patch, Headers } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Req,
+  Param,
+  Patch,
+  Headers,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UserSignupDto } from './dto/user-signup.dto';
@@ -16,11 +24,11 @@ import { User } from 'src/entities/user.entity';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
- @Post('/signup')
+  @Post('/signup')
   @ApiOperation({ description: 'Sign up a User' })
   async signUpUser(@Body() body: UserSignupDto) {
     const user = await this.authService.signup(body);
-    return ZaLaResponse.Ok(user, "user created successfully", "201")
+    return ZaLaResponse.Ok(user, 'user created successfully', '201');
   }
 
   @Post('/signin')
@@ -37,17 +45,20 @@ export class AuthController {
     return ZaLaResponse.Ok(userSignIn, 'Successfully logged in', 201);
   }
 
-  @Post('/signout')
-  @ApiOperation({description: 'Sign out a user'})
-  async signOutUser(@Body('refreshToken') refreshToken:string) {
+  @Post('/signout/:refreshToken')
+  @ApiOperation({ description: 'Sign out a user' })
+  async signOutUser(@Param('refreshToken') refreshToken: string) {
     await this.authService.signout(refreshToken);
-    return ZaLaResponse.Ok('', 'Logged out successfully', '201')
+    return ZaLaResponse.Ok('', 'Logged out successfully', '200');
   }
 
   @Patch('/change-password/:id')
-  @ApiOperation({description: 'User password change'})
-  async changePassword(@Param('id') id:string, @Body() body:ChangePasswordDto) {
-    await this.authService.changepassword(id, body)
+  @ApiOperation({ description: 'User password change' })
+  async changePassword(
+    @Param('id') id: string,
+    @Body() body: ChangePasswordDto,
+  ) {
+    await this.authService.changepassword(id, body);
     return ZaLaResponse.Ok('Password updated', '200');
   }
 
@@ -57,22 +68,32 @@ export class AuthController {
     return this.authService.getNewTokens(token);
   }
   @Post('/forgot')
-  @ApiOperation({description: 'submit registered email for password reset'})
+  @ApiOperation({ description: 'submit registered email for password reset' })
   async forgotPassword(
-    @Body() body: PasswordForgotEmailDto
-  ):Promise<Ok<string[]>> {
-    const resetResponse = await this.authService.forgotPassword(body.email)
-    return ZaLaResponse.Ok(resetResponse, "A Reset Link has been sent to the user's registered email", "200")
-  }
- 
-  @Post('/reset')
-  @ApiOperation({description: "Password reset function"})
-  async resetPassword(
-    @Headers('authorization') authorizationToken,
-    @Body() body: PasswordResetDto
-  ): Promise<Ok<User>>{
-    const updatedUser = await this.authService.resetPassword(authorizationToken, body)
-    return ZaLaResponse.Ok(updatedUser, "user password reset successful", "200")
+    @Body() body: PasswordForgotEmailDto,
+  ): Promise<Ok<string[]>> {
+    const resetResponse = await this.authService.forgotPassword(body.email);
+    return ZaLaResponse.Ok(
+      resetResponse,
+      "A Reset Link has been sent to the user's registered email",
+      '200',
+    );
   }
 
+  @Post('/reset')
+  @ApiOperation({ description: 'Password reset function' })
+  async resetPassword(
+    @Headers('authorization') authorizationToken,
+    @Body() body: PasswordResetDto,
+  ): Promise<Ok<User>> {
+    const updatedUser = await this.authService.resetPassword(
+      authorizationToken,
+      body,
+    );
+    return ZaLaResponse.Ok(
+      updatedUser,
+      'user password reset successful',
+      '200',
+    );
+  }
 }

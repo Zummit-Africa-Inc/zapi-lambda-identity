@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { UserSignupDto } from './dto/user-signup.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../entities/user.entity';
@@ -99,22 +103,20 @@ export class AuthService {
 
   async signout(refreshToken: string) {
     try {
-      const check = await this.userRepo.findOne({
-        where: { refreshToken: refreshToken }
-      })
-  
-      if(!check) {
+      const user = await this.userRepo.findOne({
+        where: { refreshToken: refreshToken },
+      });
+
+      if (!user) {
         throw new BadRequestException(
           ZaLaResponse.BadRequest(
             'Invalid Refresh Token',
-            'Get the correct refresh token and try again'
-          )
-        )
+            'Get the correct refresh token and try again',
+          ),
+        );
       }
-      const removeToken = await this.userRepo.update({refreshToken: refreshToken}, {refreshToken: null})
-      return removeToken;
-    }
-    catch(err){
+      await this.userRepo.update(user.id, { refreshToken: null });
+    } catch (err) {
       throw new BadRequestException(
         ZaLaResponse.BadRequest(err.name, err.message, err.status),
       );
@@ -148,87 +150,95 @@ export class AuthService {
     return await this.jwtHelperService.getNewTokens(refreshToken);
   }
 
-  async changepassword(id:string, dto: ChangePasswordDto) {
+  async changepassword(id: string, dto: ChangePasswordDto) {
     try {
-      const user = await this.userRepo.findOne({ where: { id: id}})
+      const user = await this.userRepo.findOne({ where: { id: id } });
       const currentPasswordHash = user.password;
-  
+
       const oldPasswordHash = await this.jwtHelperService.hashPassword(
         dto.oldPassword,
-        user.password.split(':')[0]
+        user.password.split(':')[0],
       );
-  
-      if(currentPasswordHash !== oldPasswordHash){
+
+      if (currentPasswordHash !== oldPasswordHash) {
         throw new BadRequestException(
           ZaLaResponse.BadRequest(
             `Access Denied!`,
             `The password provided doesn't match`,
-            `401`
+            `401`,
           ),
         );
       }
-  
+
       const newPasswordHash = await this.jwtHelperService.hashPassword(
         dto.newPassword,
-        user.password.split(':')[0]
-      )
-      return await this.userRepo.update(id, {password:newPasswordHash})
-
-    }
-    catch(err) {
+        user.password.split(':')[0],
+      );
+      return await this.userRepo.update(id, { password: newPasswordHash });
+    } catch (err) {
       throw new BadRequestException(
         ZaLaResponse.BadRequest(err.name, err.message, err.status),
       );
     }
   }
 
-  async forgotPassword(email: string): Promise<string[]>{
+  async forgotPassword(email: string): Promise<string[]> {
     try {
-      const user: User = await this.userRepo.findOne({where: {email}})
-      if(!user){
+      const user: User = await this.userRepo.findOne({ where: { email } });
+      if (!user) {
         throw new NotFoundException(
           ZaLaResponse.NotFoundRequest(
             'Not found',
             'email does not exist on the server',
             '404',
-          )
-        )
+          ),
+        );
       }
-    
+
       const emailPayload = {
-      userId: user.id,
-      userEmail: user.email,
-      username: user.fullName
-      }
+        userId: user.id,
+        userEmail: user.email,
+        username: user.fullName,
+      };
 
-      const success = await this.emailVerificationService.sendResetPasswordLink(emailPayload)
+      const success = await this.emailVerificationService.sendResetPasswordLink(
+        emailPayload,
+      );
 
-      return  [user.id, success]
+      return [user.id, success];
     } catch (error) {
       throw new BadRequestException(
         ZaLaResponse.BadRequest(error.name, error.message, error.status),
       );
     }
-    
   }
 
-  async resetPassword(authorizationToken: string, body: PasswordResetDto): Promise<User>{
+  async resetPassword(
+    authorizationToken: string,
+    body: PasswordResetDto,
+  ): Promise<User> {
     try {
-      const token = authorizationToken.split(' ')[1]
-      const {id} = await this.jwtHelperService.verifyReset(token)
-      const user: User = await this.userRepo.findOne({where: {id}})
-      if(!user){
+      const token = authorizationToken.split(' ')[1];
+      const { id } = await this.jwtHelperService.verifyReset(token);
+      const user: User = await this.userRepo.findOne({ where: { id } });
+      if (!user) {
         throw new NotFoundException(
-          ZaLaResponse.NotFoundRequest('Not Found Error','User does not exist on the server', '404'),
+          ZaLaResponse.NotFoundRequest(
+            'Not Found Error',
+            'User does not exist on the server',
+            '404',
+          ),
         );
       }
-      var passwordPayload ={
-        newPassword: body.password, 
-        oldPassword: user.password
-      }
-      const hashedPassword = await this.jwtHelperService.newPasswordHash(passwordPayload)
-      await this.userRepo.update(id, {password: hashedPassword})
-      return user 
+      var passwordPayload = {
+        newPassword: body.password,
+        oldPassword: user.password,
+      };
+      const hashedPassword = await this.jwtHelperService.newPasswordHash(
+        passwordPayload,
+      );
+      await this.userRepo.update(id, { password: hashedPassword });
+      return user;
     } catch (error) {
       throw new BadRequestException(
         ZaLaResponse.BadRequest(error.name, error.message, error.status),
