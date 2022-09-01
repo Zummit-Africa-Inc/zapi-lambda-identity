@@ -45,20 +45,21 @@ export class AuthController {
     return ZaLaResponse.Ok(userSignIn, 'Successfully logged in', 201);
   }
 
-  @Post('/signout/:refreshToken')
+  @Post('/signout')
   @ApiOperation({ description: 'Sign out a user' })
-  async signOutUser(@Param('refreshToken') refreshToken: string) {
+  async signOutUser(
+    @Headers('authorization') refreshToken: string) {
     await this.authService.signout(refreshToken);
-    return ZaLaResponse.Ok('', 'Logged out successfully', '200');
+    return ZaLaResponse.Ok('success', 'Logged out successfully', '200');
   }
 
-  @Patch('/change-password/:id')
+  @Patch('/change-password')
   @ApiOperation({ description: 'User password change' })
   async changePassword(
-    @Param('id') id: string,
+    @Headers('authorization') refreshToken: string,
     @Body() body: ChangePasswordDto,
   ) {
-    await this.authService.changepassword(id, body);
+    await this.authService.changepassword(refreshToken, body);
     return ZaLaResponse.Ok('Password updated', '200');
   }
 

@@ -86,6 +86,7 @@ export class AuthService {
         history: user,
       });
       await this.userHistoryRepo.save(createHistory);
+      user.refreshToken = tokens.refresh
 
       return {
         ...tokens,
@@ -101,8 +102,9 @@ export class AuthService {
     }
   }
 
-  async signout(refreshToken: string) {
+  async signout(token: string) {
     try {
+      const refreshToken = token.split(' ')[1];
       const user = await this.userRepo.findOne({
         where: { refreshToken: refreshToken },
       });
@@ -150,21 +152,24 @@ export class AuthService {
     return await this.jwtHelperService.getNewTokens(refreshToken);
   }
 
-  async changepassword(id: string, dto: ChangePasswordDto) {
+  async changepassword(token: string, dto: ChangePasswordDto) {
+    const refreshToken = token.split(' ')[1];
+      
     try {
-      const user = await this.userRepo.findOne({ where: { id: id } });
-      const currentPasswordHash = user.password;
+      const {id, password,} = await this.userRepo.findOne({where: { refreshToken: refreshToken }});
+      // const user = await this.userRepo.findOne({ where: { refreshToken: refreshToken } });
+      const currentPasswordHash = password;
 
       const oldPasswordHash = await this.jwtHelperService.hashPassword(
         dto.oldPassword,
-        user.password.split(':')[0],
+        password.split(':')[0],
       );
 
       if (currentPasswordHash !== oldPasswordHash) {
         throw new BadRequestException(
           ZaLaResponse.BadRequest(
             `Access Denied!`,
-            `The password provided doesn't match`,
+            `The old password provided is incorrect`,
             `401`,
           ),
         );
@@ -172,7 +177,7 @@ export class AuthService {
 
       const newPasswordHash = await this.jwtHelperService.hashPassword(
         dto.newPassword,
-        user.password.split(':')[0],
+        password.split(':')[0],
       );
       return await this.userRepo.update(id, { password: newPasswordHash });
     } catch (err) {
