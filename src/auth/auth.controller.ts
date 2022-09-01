@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Req, Param, Patch } from '@nestjs/common';
+import { Controller, Post, Body, Req, Param, Patch, Headers } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UserSignupDto } from './dto/user-signup.dto';
@@ -10,18 +10,20 @@ import { UserDto } from '../user/dto/user.dto';
 import { Request } from 'express';
 import { Ok, ZaLaResponse } from 'src/common/helpers/response';
 import { userSignInType } from 'src/common/types';
+import { PasswordForgotEmailDto } from 'src/user/dto/password-email.dto';
+import { PasswordResetDto } from 'src/user/dto/password-reset.dto';
+import { User } from 'src/entities/user.entity';
 
 @ApiTags('Auth-Users')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Serialize(SerializeUserDto)
-  @Post('/signup')
+ @Post('/signup')
   @ApiOperation({ description: 'Sign up a User' })
   async signUpUser(@Body() body: UserSignupDto) {
     const user = await this.authService.signup(body);
-    return user;
+    return ZaLaResponse.Ok(user, "user created successfully", "201")
   }
 
   @Post('/signin')
@@ -57,4 +59,23 @@ export class AuthController {
   getAccess(@Body('refreshToken') token: string) {
     return this.authService.getNewTokens(token);
   }
+  @Post('/forgot')
+  @ApiOperation({description: 'submit registered email for password reset'})
+  async forgotPassword(
+    @Body() body: PasswordForgotEmailDto
+  ):Promise<Ok<string[]>> {
+    const resetResponse = await this.authService.forgotPassword(body.email)
+    return ZaLaResponse.Ok(resetResponse, "A Reset Link has been sent to the user's registered email", "200")
+  }
+ 
+  @Post('/reset')
+  @ApiOperation({description: "Password reset function"})
+  async resetPassword(
+    @Headers('authorization') authorizationToken,
+    @Body() body: PasswordResetDto
+  ): Promise<Ok<User>>{
+    const updatedUser = await this.authService.resetPassword(authorizationToken, body)
+    return ZaLaResponse.Ok(updatedUser, "user password reset successful", "200")
+  }
+
 }
