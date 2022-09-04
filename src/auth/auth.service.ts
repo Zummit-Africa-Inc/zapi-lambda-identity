@@ -117,7 +117,8 @@ export class AuthService {
           ),
         );
       }
-      await this.userRepo.update(user.id, { refreshToken: null });
+      const expiringToken = await this.jwtHelperService.changeJwtExpiry(token)
+      await this.userRepo.update(user.id, { refreshToken: null || expiringToken });
     } catch (err) {
       throw new BadRequestException(
         ZaLaResponse.BadRequest(err.name, err.message, err.status),
