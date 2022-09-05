@@ -6,10 +6,10 @@ import { configConstant } from 'src/common/constants/config.constant';
 import { ZaLaResponse } from 'src/common/helpers/response';
 import { User } from '../entities/user.entity';
 import { Repository } from 'typeorm';
-import { VerifyToken } from './verify.interface';
 import { HttpService } from '@nestjs/axios';
 import { lastValueFrom } from 'rxjs';
 import { JwtHelperService } from '../auth/jwtHelper.service';
+import { VerifyToken } from 'src/common/interfaces/verify.interface';
 
 @Injectable()
 export class EmailVerificationService {
@@ -51,9 +51,7 @@ export class EmailVerificationService {
         text: text,
       });
       await lastValueFrom(sendNotification.pipe());
-    } catch (error) {
-      console.log(error.message);
-    }
+    } catch (error) {}
   }
 
   /*
@@ -109,9 +107,7 @@ export class EmailVerificationService {
       if (!user.isEmailVerified) {
         this.sendVerificationLink(email);
       }
-    } catch (error) {
-      console.log(error.message);
-    }
+    } catch (error) {}
   }
 
   /*
@@ -141,7 +137,6 @@ export class EmailVerificationService {
         email,
       },
     });
-    // console.log(newUser);
     if (newUser) {
       // TODO: send POST request to the profile service to create the profile
       // Axios
@@ -167,38 +162,47 @@ export class EmailVerificationService {
   /* Receives a payload that is processed and generates a link sent to the user's email to process his
     or her password reset request
   */
-  async sendResetPasswordLink(emailPayload: any){
-    const {userId, userEmail, username} = emailPayload
-    const resetToken = await this.jwtHelpers.signReset({id: userId, userEmail})
+  async sendResetPasswordLink(emailPayload: any) {
+    const { userId, userEmail, username } = emailPayload;
+    const resetToken = await this.jwtHelpers.signReset({
+      id: userId,
+      userEmail,
+    });
     try {
-      const resetUrl = `${this.configService.get(configConstant.baseUrls.identityFEUrl)}/${resetToken}`
-      const notification_url =  `${this.configService.get<string>(
-          configConstant.baseUrls.notificationService
-        )}/email/send-mail`
+      const resetUrl = `${this.configService.get(
+        configConstant.baseUrls.identityFEUrl,
+      )}/${resetToken}`;
+      const notification_url = `${this.configService.get<string>(
+        configConstant.baseUrls.notificationService,
+      )}/email/send-mail`;
       const text = `Hi, ${username}, \n To proceed with your request, please click the link below:, \n\n\n ${resetUrl}`;
       const mailData = {
         email: userEmail,
         subject: 'Password Reset Request',
         text: text,
-      }
+      };
       // An axios request to the notification service
-      const call = this.httpService.axiosRef
+      const call = this.httpService.axiosRef;
       const axiosResponse = await call({
         method: 'POST',
         url: notification_url,
-        data: mailData
-      })
+        data: mailData,
+      });
 
-      const { status} = axiosResponse
-      const statusString = status.toString()
-      if (status >= 400 ){
+      const { status } = axiosResponse;
+      const statusString = status.toString();
+      if (status >= 400) {
         throw new BadRequestException(
-          ZaLaResponse.BadRequest("failed","unable to send reset link at the moment", statusString)
-        )
+          ZaLaResponse.BadRequest(
+            'failed',
+            'unable to send reset link at the moment',
+            statusString,
+          ),
+        );
       }
-      return `Reset link successfully sent to ${userEmail} resetToken: ${resetToken}`
+      return `Reset link successfully sent to ${userEmail} resetToken: ${resetToken}`;
     } catch (error) {
-       throw new BadRequestException(
+      throw new BadRequestException(
         ZaLaResponse.BadRequest('Internal Server error', error.message, '500'),
       );
     }
