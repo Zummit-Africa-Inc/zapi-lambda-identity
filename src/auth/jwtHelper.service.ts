@@ -164,4 +164,22 @@ export class JwtHelperService {
       );
     } 
   }
+
+  async changeJwtExpiry(token: string) {
+    try {
+      const {id, userEmail} = await this.jwTokenService.verify(
+        token, {secret: await this.configService.get(configConstant.jwt.reset_secret)} 
+      )
+      let expiringToken = this.jwTokenService.sign({id, userEmail }, {
+          secret: await this.configService.get(configConstant.jwt.reset_secret),
+          expiresIn: "5m",
+        });
+        return expiringToken
+    } catch (error) {
+      throw new BadRequestException(
+        ZaLaResponse.BadRequest(error.name, error.message, error.status),
+      );
+    }
+  }
 }
+
