@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Headers,
+  Inject,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -18,11 +19,15 @@ import { userSignInType } from 'src/common/types';
 import { PasswordForgotEmailDto } from 'src/user/dto/password-email.dto';
 import { PasswordResetDto } from 'src/user/dto/password-reset.dto';
 import { User } from 'src/entities/user.entity';
+import { ClientProxy } from '@nestjs/microservices';
 
 @ApiTags('Auth-Users')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    @Inject('IDENTITY_SERVICE') private readonly client: ClientProxy,
+  ) {}
 
   @Post('/signup')
   @ApiOperation({ description: 'Sign up a User' })
@@ -47,8 +52,7 @@ export class AuthController {
 
   @Post('/signout')
   @ApiOperation({ description: 'Sign out a user' })
-  async signOutUser(
-    @Headers('authorization') refreshToken: string) {
+  async signOutUser(@Headers('authorization') refreshToken: string) {
     await this.authService.signout(refreshToken);
     return ZaLaResponse.Ok('success', 'Logged out successfully', '200');
   }
@@ -96,5 +100,10 @@ export class AuthController {
       'user password reset successful',
       '200',
     );
+  }
+  @Post('/:test')
+  @ApiOperation({ description: 'test communication' })
+  async testProd(@Param('test') test: string): Promise<any> {
+    this.client.emit('test', test);
   }
 }
