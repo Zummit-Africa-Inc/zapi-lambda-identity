@@ -117,7 +117,7 @@ export class AuthService {
           ),
         );
       }
-      const expiringToken = await this.jwtHelperService.changeJwtExpiry(token)
+      const expiringToken = await this.jwtHelperService.changeJwtExpiry(refreshToken)
       await this.userRepo.update(user.id, { refreshToken: null || expiringToken });
     } catch (err) {
       throw new BadRequestException(
