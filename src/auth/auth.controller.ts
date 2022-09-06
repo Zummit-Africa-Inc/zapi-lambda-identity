@@ -7,6 +7,7 @@ import {
   Patch,
   Headers,
   Inject,
+  Get,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -101,7 +102,7 @@ export class AuthController {
       '200',
     );
   }
-  @Post('/:test')
+  @Get('/test')
   @ApiOperation({ description: 'test communication' })
   async testProd(@Param('test') test: string): Promise<any> {
     this.client.emit('test', test);
