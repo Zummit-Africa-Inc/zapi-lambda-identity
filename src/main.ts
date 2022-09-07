@@ -7,7 +7,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors()
   app.setGlobalPrefix('zapi-identity')
-  app.useGlobalPipes(new ValidationPipe({whitelist: true, transform: true}))
+  app.useGlobalPipes(new ValidationPipe())
 
   if(process.env.NODE_ENV !== 'production') {
     const options = new DocumentBuilder()
