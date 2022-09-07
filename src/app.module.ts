@@ -8,9 +8,19 @@ import { UsersModule } from './user/user.module';
 import { ConfigModule } from '@nestjs/config';
 import { queue } from './common/Micoservices/RabbitMqQueues';
 
-/* Creating a microservice client for the queue. */
-const IdentityService = queue('IDENTITY_SERVICE', process.env.IDENTITY_QUEUE);
-const NotifyService = queue('NOTIFY_SERVICE', process.env.NOTIFY_QUEUE);
+/* Creating a queue for the microservice. */
+const IdentityService = queue(
+  'IDENTITY_SERVICE',
+  process.env.NODE_ENV !== 'production'
+    ? process.env.DEV_IDENTITY_QUEUE
+    : process.env.IDENTITY_QUEUE,
+);
+const NotifyService = queue(
+  'NOTIFY_SERVICE',
+  process.env.NODE_ENV !== 'production'
+    ? process.env.DEV_NOTIFY_QUEUE
+    : process.env.NOTIFY_QUEUE,
+);
 
 @Global()
 @Module({
