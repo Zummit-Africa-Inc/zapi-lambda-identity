@@ -27,7 +27,7 @@ export class AuthService {
   ) {}
 
   async signup(user: UserSignupDto) {
-    try{
+    try {
       const userdata = Object.assign(new User(), user);
       const newUser = await this.userRepo.save(userdata).catch(async (error) => {
         this.emailVerificationService.resendVerificationLink(user.email);
