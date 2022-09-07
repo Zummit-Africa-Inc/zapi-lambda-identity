@@ -26,7 +26,7 @@ export class AuthService {
     private emailVerificationService: EmailVerificationService,
   ) {}
 
-  async signup(user: UserSignupDto) {
+  async signup(user: UserSignupDto): Promise<string> {
     const userdata = Object.assign(new User(), user);
     const newUser = await this.userRepo.save(userdata).catch(async (error) => {
       this.emailVerificationService.resendVerificationLink(user.email);
@@ -39,7 +39,7 @@ export class AuthService {
       );
     });
     await this.emailVerificationService.sendVerificationLink(newUser.email);
-    return newUser;
+    return 'Signup Successful';
   }
 
   /**
@@ -86,7 +86,7 @@ export class AuthService {
         history: user,
       });
       await this.userHistoryRepo.save(createHistory);
-      user.refreshToken = tokens.refresh
+      user.refreshToken = tokens.refresh;
 
       return {
         ...tokens,
@@ -117,8 +117,10 @@ export class AuthService {
           ),
         );
       }
-      const expiringToken = await this.jwtHelperService.changeJwtExpiry(token)
-      await this.userRepo.update(user.id, { refreshToken: null || expiringToken });
+      const expiringToken = await this.jwtHelperService.changeJwtExpiry(token);
+      await this.userRepo.update(user.id, {
+        refreshToken: null || expiringToken,
+      });
     } catch (err) {
       throw new BadRequestException(
         ZaLaResponse.BadRequest(err.name, err.message, err.status),
@@ -155,9 +157,11 @@ export class AuthService {
 
   async changepassword(token: string, dto: ChangePasswordDto) {
     const refreshToken = token.split(' ')[1];
-      
+
     try {
-      const {id, password,} = await this.userRepo.findOne({where: { refreshToken: refreshToken }});
+      const { id, password } = await this.userRepo.findOne({
+        where: { refreshToken: refreshToken },
+      });
       // const user = await this.userRepo.findOne({ where: { refreshToken: refreshToken } });
       const currentPasswordHash = password;
 

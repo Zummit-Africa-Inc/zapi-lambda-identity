@@ -3,11 +3,9 @@ import {
   Post,
   Body,
   Req,
-  Param,
   Patch,
   Headers,
   Inject,
-  Get,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -20,21 +18,17 @@ import { userSignInType } from 'src/common/types';
 import { PasswordForgotEmailDto } from 'src/user/dto/password-email.dto';
 import { PasswordResetDto } from 'src/user/dto/password-reset.dto';
 import { User } from 'src/entities/user.entity';
-import { ClientProxy } from '@nestjs/microservices';
 
 @ApiTags('Auth-Users')
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService,
-    @Inject('IDENTITY_SERVICE') private readonly client: ClientProxy,
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Post('/signup')
   @ApiOperation({ description: 'Sign up a User' })
   async signUpUser(@Body() body: UserSignupDto) {
-    const user = await this.authService.signup(body);
-    return ZaLaResponse.Ok(user, 'user created successfully', '201');
+    const response = await this.authService.signup(body);
+    return ZaLaResponse.Ok(response, 'user created successfully', '201');
   }
 
   @Post('/signin')
@@ -101,10 +95,5 @@ export class AuthController {
       'user password reset successful',
       '200',
     );
-  }
-  @Get('/test')
-  @ApiOperation({ description: 'test communication' })
-  async testProd(@Param('test') test: string): Promise<any> {
-    this.client.emit('test', test);
   }
 }

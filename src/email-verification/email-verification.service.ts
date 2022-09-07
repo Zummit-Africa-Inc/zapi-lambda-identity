@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -10,6 +10,7 @@ import { HttpService } from '@nestjs/axios';
 import { lastValueFrom } from 'rxjs';
 import { JwtHelperService } from '../auth/jwtHelper.service';
 import { VerifyToken } from 'src/common/interfaces/verify.interface';
+import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class EmailVerificationService {
@@ -20,6 +21,7 @@ export class EmailVerificationService {
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
     private readonly jwtHelpers: JwtHelperService,
+    @Inject('NOTIFY_SERVICE') private readonly client: ClientProxy,
   ) {}
 
   /*
@@ -40,17 +42,12 @@ export class EmailVerificationService {
       )}/email-verification/${token}`;
       const text = `Welcome to Zummit. To confirm your mail, please click the link below:\n\n\n ${url}`;
 
-      // An axios request to the notification service
-      const notification_url = `${this.configService.get<string>(
-        configConstant.baseUrls.notificationService,
-      )}/email/send-mail`;
-
-      const sendNotification = await this.httpService.post(notification_url, {
-        email: email,
+      /* Sending a message to the notification service to send an email to the user. */
+      this.client.emit('verification', {
+        email,
         subject: 'Confirm Email',
-        text: text,
+        text,
       });
-      await lastValueFrom(sendNotification.pipe());
     } catch (error) {}
   }
 
