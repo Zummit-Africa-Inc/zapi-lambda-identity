@@ -1,7 +1,14 @@
-import { Controller, Post, Body, Req, Patch, Headers } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Req,
+  Patch,
+  Headers,
+  Inject,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { UserSignupDto } from './dto/user-signup.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UserSigninDto } from './dto/user-signin.dto';
 import { Request } from 'express';
@@ -10,11 +17,18 @@ import { userSignInType } from 'src/common/types';
 import { PasswordForgotEmailDto } from 'src/user/dto/password-email.dto';
 import { PasswordResetDto } from 'src/user/dto/password-reset.dto';
 import { User } from 'src/entities/user.entity';
+import { ClientProxy } from '@nestjs/microservices';
+import { UserSignupDto } from './dto/user-signup.dto';
+import { TestDto } from './dto/test.dto';
 
 @ApiTags('Auth-Users')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    @Inject('NOTIFY_SERVICE') private readonly n_client: ClientProxy,
+    @Inject('IDENTITY_SERVICE') private readonly i_client: ClientProxy,
+  ) {}
 
   @Post('/signup')
   @ApiOperation({ description: 'Sign up a User' })
@@ -87,5 +101,18 @@ export class AuthController {
       'user password reset successful',
       '200',
     );
+  }
+
+  //Endpoints for communication testing
+  @Post('/send_to_core')
+  @ApiOperation({ description: 'Core test endpoint' })
+  async testIdentity(@Body() body: TestDto): Promise<any> {
+    this.i_client.emit('identity_test', body);
+  }
+
+  @Post('/send_to_notification')
+  @ApiOperation({ description: 'Notification test endpoint' })
+  async testNotify(@Body() body: TestDto): Promise<any> {
+    this.n_client.emit('notify_test', body);
   }
 }
