@@ -48,7 +48,7 @@ export class UserService {
 
   async testSubscription(){
     try{
-      const url : string = process.env.NOTIFICATION_SERVICE_URL
+      const url : string = `${process.env.NOTIFICATION_SERVICE_URL}/ws-notify/subscription-event`
       const data : object = {apiId:"test api",
                             profileId:"test profile",
                             developerId : "b77dc7ec-74df-4fa5-ba32-b50fede35785"}
