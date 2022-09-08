@@ -3,6 +3,7 @@ import { UserService } from './user.service';
 import { ApiOperation } from '@nestjs/swagger';
 import { UserHistory } from './../entities/user-history.entity';
 import { ZaLaResponse, Ok } from 'src/common/helpers/response';
+import { AxiosResponse } from 'axios';
 
 @Controller('users')
 export class UserController {
@@ -19,8 +20,8 @@ export class UserController {
   }
 
   @Get('subscription-test')
-  @ApiOperation({ description: 'test subscription event'})
-  async testSubscription(){
-    return await this.userService.testSubscription()
+  @ApiOperation({ description: 'test api hosted event'})
+  async testSubscription(): Promise<AxiosResponse<any>>{
+    return await (await this.userService.testSubscription()).data
   }
 }
