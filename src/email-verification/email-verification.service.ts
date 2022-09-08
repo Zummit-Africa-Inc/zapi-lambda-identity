@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -37,18 +37,41 @@ export class EmailVerificationService {
         expiresIn: this.configService.get(configConstant.jwt.access_time),
       });
 
-      const url = `${this.configService.get(
-        configConstant.baseUrls.identityService,
-      )}/email-verification/${token}`;
-      const text = `Welcome to Zummit. To confirm your mail, please click the link below:\n\n\n ${url}`;
+      const completesignUpURL = `${this.configService.get(
+        configConstant.baseUrls.completeSignupFE,
+      )}/${token}`;
 
-      /* Sending a message to the notification service to send an email to the user. */
-      this.client.emit('verification', {
+      const notification_url = `${this.configService.get<string>(
+        configConstant.baseUrls.notificationService,
+      )}/email/send-mail`
+
+      const emailBody = `Welcome to Zummit. To confirm your mail, please click the link below:\n\n\n ${completesignUpURL}`;
+
+      const emailPaybload = {
         email,
-        subject: 'Confirm Email',
-        text,
-      });
-    } catch (error) {}
+        subject: "Confirm Email",
+        text: emailBody
+      }
+
+      /* Sending a message to the notification service to send an email to the user via rabbitMQ. */
+      // this.client.emit('verification', {
+      //   email,
+      //   subject: 'Confirm Email',
+      //   text: emailBody,
+      // });
+
+      /* making axios request to the notification service*/
+      const call = this.httpService.axiosRef
+      const axiosResponse = await call({
+        method: 'POST',
+        url: notification_url,
+        data: emailPaybload
+      })
+    } catch (error) {
+      throw new BadRequestException(
+        ZaLaResponse.BadRequest('Internal Server Error', error.message, '500'),
+      );
+    }
   }
 
   /*
@@ -65,14 +88,13 @@ export class EmailVerificationService {
       // Mark User email as verified
       await this.markEmailAsConfirmed(payload.email);
 
-      // this a temporary return value ... when the profile entity in the core service is set up,
-      // this will be implemented fully
-      const user = await this.usersRepo.findOne({
-        where: { email: payload.email },
-      });
-      return user;
       //Create a user profile once email is verified
-      // return await this.createUserProfile(payload.email);
+      const completeUser = await this.createUserProfile(payload.email);
+      const user = await this.usersRepo.findOne({
+        where: { email: completeUser.email },
+        select:['id','email', 'fullName', 'profileID', 'isEmailVerified', 'createdOn', 'updatedOn']
+      });
+      return user
     } catch (error) {
       if (error?.name === 'TokenExpiredError')
         throw new BadRequestException(
@@ -134,7 +156,15 @@ export class EmailVerificationService {
         email,
       },
     });
-    if (newUser) {
+    if (!newUser) {
+      throw new NotFoundException(
+        ZaLaResponse.NotFoundRequest(
+          "Not Found Error",
+          "User with the given email not found",
+          "404"
+        )
+      )
+    }
       // TODO: send POST request to the profile service to create the profile
       // Axios
       const new_Profile = await this.httpService.post(
@@ -142,18 +172,18 @@ export class EmailVerificationService {
           configConstant.baseUrls.coreService,
         )}/profile/create`,
         {
-          user_id: newUser.id,
           email: newUser.email,
+          userId: newUser.id,
         },
       );
 
       const newProfile = await lastValueFrom(new_Profile.pipe());
-      const profileData = newProfile.data;
+      const profileData = newProfile.data.data;
       newUser.profileID = profileData.id;
 
       const new_User = await this.usersRepo.save(newUser);
       return new_User;
-    }
+    
   }
 
   /* Receives a payload that is processed and generates a link sent to the user's email to process his
