@@ -1,3 +1,4 @@
+import { HttpService } from '@nestjs/axios';
 import {
   Injectable,
   NotFoundException,
@@ -13,6 +14,7 @@ export class UserService {
   constructor(
     @InjectRepository(UserHistory)
     private readonly userHistoryRepo: Repository<UserHistory>,
+    private readonly httpService: HttpService
   ) {}
 
   /**
@@ -43,4 +45,18 @@ export class UserService {
       );
     }
   }
+
+  async testSubscription(){
+    try{
+      const url : string = process.env.NOTIFICATION_SERVICE_URL
+      const data : object = {apiId:"test api",
+                            profileId:"test profile",
+                            developerId : "b77dc7ec-74df-4fa5-ba32-b50fede35785"}
+      
+      return this.httpService.post(url,data)  
+    }catch(err){
+      console.log(err)
+    }
+  }
+
 }

@@ -17,4 +17,10 @@ export class UserController {
 
     return ZaLaResponse.Ok(histories, 'Ok', 200);
   }
+
+  @Get('subscription-test')
+  @ApiOperation({ description: 'test subscription event'})
+  async testSubscription(){
+    return await this.userService.testSubscription()
+  }
 }
