@@ -11,7 +11,8 @@ export const configConstant = {
     identityService: 'IDENTITY_SERVICE_URL',
     notificationService: 'NOTIFICATION_SERVICE_URL',
     coreService: 'CORE_SERVICE_URL',
-    identityFEUrl: 'IDENTITY_SERVICE_FE_URL'
+    identityFEUrl: 'IDENTITY_SERVICE_FE_URL',
+    completeSignupFE: 'IDENTITY_FE_COMPLETE_SIGNUP'
   },
   jwt: {
     access_secret: 'ACCESS_SECRET',
