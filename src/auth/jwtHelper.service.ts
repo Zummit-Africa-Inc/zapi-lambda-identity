@@ -168,10 +168,10 @@ export class JwtHelperService {
   async changeJwtExpiry(token: string) {
     try {
       const {id, userEmail} = await this.jwTokenService.verify(
-        token, {secret: await this.configService.get(configConstant.jwt.reset_secret)} 
+        token, {secret: await this.configService.get(configConstant.jwt.refresh_secret)} 
       )
       let expiringToken = this.jwTokenService.sign({id, userEmail }, {
-          secret: await this.configService.get(configConstant.jwt.reset_secret),
+          secret: await this.configService.get(configConstant.jwt.refresh_secret),
           expiresIn: "5m",
         });
         return expiringToken
