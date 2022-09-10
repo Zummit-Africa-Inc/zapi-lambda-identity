@@ -102,7 +102,8 @@ export class EmailVerificationService {
       return user
     } catch (error) {
       if (error?.name === 'TokenExpiredError') 
-        this.sendVerificationLink((await this.usersRepo.findOne({where:{id:userId}})).email)
+        /*resend the verification link to the user */
+        // this.sendVerificationLink((await this.usersRepo.findOne({where:{id:userId}})).email)
         throw new BadRequestException(
           ZaLaResponse.BadRequest(
             'Unathorized',
