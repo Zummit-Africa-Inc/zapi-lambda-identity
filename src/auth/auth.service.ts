@@ -27,19 +27,33 @@ export class AuthService {
   ) {}
 
   async signup(user: UserSignupDto): Promise<string> {
-    const userdata = Object.assign(new User(), user);
-    const newUser = await this.userRepo.save(userdata).catch(async (error) => {
-      this.emailVerificationService.resendVerificationLink(user.email);
+    // const userdata = Object.assign(new User(), user);
+    const userExists = await this.userRepo.findOne({ where: { email: user.email}})
+    if(userExists){
       throw new BadRequestException(
         ZaLaResponse.BadRequest(
           'Duplicate Values',
           'The Email already exists',
-          error.errorCode,
+          "400",
         ),
       );
-    });
-    await this.emailVerificationService.sendVerificationLink(newUser.email);
-    return 'Signup Successful, check your email to complete the sign up';
+    }
+    const newUser = this.userRepo.create(user);
+    await this.userRepo.save(newUser)
+    await this.emailVerificationService.sendVerificationLink(user.email);
+    return "Signup Successful, check your email to complete the sign up"
+    // const newUser = await this.userRepo.save(userdata).catch(async (error) => {
+    //   this.emailVerificationService.resendVerificationLink(user.email);
+    //   throw new BadRequestException(
+    //     ZaLaResponse.BadRequest(
+    //       'Duplicate Values',
+    //       'The Email already exists',
+    //       error.errorCode,
+    //     ),
+    //   );
+    // });
+    // await this.emailVerificationService.sendVerificationLink(newUser.email);
+    // return 'Signup Successful, check your email to complete the sign up';
   }
 
   /**
