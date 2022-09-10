@@ -32,14 +32,18 @@ export class EmailVerificationService {
   async sendVerificationLink(email: string) {
     try {
       const payload: VerifyToken = { email };
-      const token = this.jwtService.sign(payload, {
+      const signupToken = this.jwtService.sign(payload, {
         secret: this.configService.get(configConstant.jwt.verify_secret),
         expiresIn: this.configService.get(configConstant.jwt.access_time),
       });
 
+     await this.usersRepo.update({email: email}, {signupToken: signupToken})
+      const user = await this.usersRepo.findOne({where: {
+        email: email
+      }})
       const completesignUpURL = `${this.configService.get(
-        configConstant.baseUrls.completeSignupFE,
-      )}/${token}`;
+        configConstant.baseUrls.completeSignupFE
+      )}/${user.id}`;
 
       const notification_url = `${this.configService.get<string>(
         configConstant.baseUrls.notificationService,
@@ -80,9 +84,10 @@ export class EmailVerificationService {
    * @Params: token - token sent to the user
    * return - return a called function(createUserProfile) to create user profile
    */
-  async decodeEmailToken(token: string) {
+  async decodeEmailToken(userId: string) {
     try {
-      const payload = await this.jwtService.verify(token, {
+      const {signupToken} = await this.usersRepo.findOne({where:{id: userId}})
+      const payload = await this.jwtService.verify(signupToken, {
         secret: this.configService.get(configConstant.jwt.verify_secret),
       });
       // Mark User email as verified
@@ -92,15 +97,16 @@ export class EmailVerificationService {
       const completeUser = await this.createUserProfile(payload.email);
       const user = await this.usersRepo.findOne({
         where: { email: completeUser.email },
-        select:['id','email', 'fullName', 'profileID', 'isEmailVerified', 'createdOn', 'updatedOn']
+        select:['id','email', 'fullName', 'profileID', 'isEmailVerified', 'createdOn', 'updatedOn', 'signupToken']
       });
       return user
     } catch (error) {
-      if (error?.name === 'TokenExpiredError')
+      if (error?.name === 'TokenExpiredError') 
+        this.sendVerificationLink((await this.usersRepo.findOne({where:{id:userId}})).email)
         throw new BadRequestException(
           ZaLaResponse.BadRequest(
             'Unathorized',
-            'Email confirmation token expired',
+            'signup confirmation token expired \n The Link has been resent to your email',
             '401',
           ),
         );

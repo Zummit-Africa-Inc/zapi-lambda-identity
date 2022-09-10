@@ -39,7 +39,7 @@ export class AuthService {
       );
     });
     await this.emailVerificationService.sendVerificationLink(newUser.email);
-    return 'Signup Successful';
+    return 'Signup Successful, check your email to complete the sign up';
   }
 
   /**

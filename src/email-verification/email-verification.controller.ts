@@ -8,8 +8,8 @@ export class EmailVerificationController {
     private readonly emailVerificatioService: EmailVerificationService,
   ) {}
 
-  @Get('/:token')
-  async verifyEmail(@Param('token') emailTokenDto: string) {
+  @Get('/:id')
+  async verifyEmail(@Param('id') emailTokenDto: string) {
     const user = await this.emailVerificatioService.decodeEmailToken(emailTokenDto);
     return ZaLaResponse.Ok<object>({user} , 'Profile created', 201);
   }
