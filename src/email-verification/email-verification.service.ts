@@ -106,7 +106,7 @@ export class EmailVerificationService {
         throw new BadRequestException(
           ZaLaResponse.BadRequest(
             'Unathorized',
-            'signup confirmation token expired \n The Link has been resent to your email',
+            'signup confirmation token expired',
             '401',
           ),
         );
