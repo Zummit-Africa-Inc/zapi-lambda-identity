@@ -29,7 +29,7 @@ export class User extends SharedEntity {
   @Exclude()
   signupToken?: string
 
-  @OneToMany(() => UserHistory, (history) => history.history)
+  @OneToMany(() => UserHistory, (history) => history.history, {onDelete: 'SET NULL'})
   histories: UserHistory[];
 
   @BeforeInsert()

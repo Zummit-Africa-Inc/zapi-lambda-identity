@@ -1,9 +1,14 @@
+import { HttpService } from '@nestjs/axios';
 import {
   Injectable,
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
+import { AxiosResponse } from 'axios';
+import { lastValueFrom } from 'rxjs';
+import { configConstant } from 'src/common/constants/config.constant';
 import { ZaLaResponse } from 'src/common/helpers/response';
 import { Repository } from 'typeorm';
 import { UserHistory } from './../entities/user-history.entity';
@@ -13,6 +18,8 @@ export class UserService {
   constructor(
     @InjectRepository(UserHistory)
     private readonly userHistoryRepo: Repository<UserHistory>,
+    private readonly httpService: HttpService,
+    private readonly configService: ConfigService
   ) {}
 
   /**
@@ -43,4 +50,19 @@ export class UserService {
       );
     }
   }
+///ws-notify/subscription-event
+  async testSubscription(): Promise<AxiosResponse<any>>{
+    try{
+      const payload = {
+        apiId: "api",
+        profileId: "profile",
+        developerId: "b77dc7ec-74df-4fa5-ba32-b50fede35785"
+      }
+      const url = this.configService.get(configConstant.baseUrls.notificationService)
+      return await lastValueFrom(this.httpService.post(`${url}/ws-notify/subscription-event`,payload) )
+    }catch(err){
+      console.log(err)
+    }
+  }
+
 }
