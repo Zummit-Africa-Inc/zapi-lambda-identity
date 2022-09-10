@@ -257,4 +257,14 @@ export class AuthService {
       );
     }
   }
+
+  deleteUser = async (email: string) => {
+    const resp = await this.userRepo.delete({ email });
+    if (resp.affected == 0) {
+      throw new BadRequestException(
+        ZaLaResponse.BadRequest('error', 'User does not exist', '400'),
+      );
+    }
+    return resp;
+  };
 }

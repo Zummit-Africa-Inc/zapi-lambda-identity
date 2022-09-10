@@ -18,7 +18,7 @@ import { PasswordForgotEmailDto } from 'src/user/dto/password-email.dto';
 import { PasswordResetDto } from 'src/user/dto/password-reset.dto';
 import { User } from 'src/entities/user.entity';
 import { ClientProxy } from '@nestjs/microservices';
-import { UserSignupDto } from './dto/user-signup.dto';
+import { DeleteUserDto, UserSignupDto } from './dto/user-signup.dto';
 import { TestDto } from './dto/test.dto';
 
 @ApiTags('Auth-Users')
@@ -114,5 +114,12 @@ export class AuthController {
   @ApiOperation({ description: 'Notification test endpoint' })
   async testNotify(@Body() body: TestDto): Promise<any> {
     this.n_client.emit('notify_test', body);
+  }
+
+  @Post('/delete-user')
+  @ApiOperation({ description: 'Delete a user' })
+  async deleteUserr(@Body() {email}: DeleteUserDto) {
+    const response = await this.authService.deleteUser(email);
+    return ZaLaResponse.Ok(response, 'user deleted successfully', '200');
   }
 }

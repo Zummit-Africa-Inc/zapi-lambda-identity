@@ -26,3 +26,9 @@ export class UserSignupDto {
     )
     password: string
 }
+export class DeleteUserDto {
+    @IsEmail()
+    @IsString()
+    @ApiProperty()
+    email: string
+}
