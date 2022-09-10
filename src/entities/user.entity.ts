@@ -25,6 +25,10 @@ export class User extends SharedEntity {
   @Exclude()
   refreshToken?: string;
 
+  @Column({unique: true, nullable: true})
+  @Exclude()
+  signupToken?: string
+
   @OneToMany(() => UserHistory, (history) => history.history, {onDelete: 'SET NULL'})
   histories: UserHistory[];
 
