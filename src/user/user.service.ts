@@ -11,13 +11,13 @@ import { lastValueFrom } from 'rxjs';
 import { configConstant } from 'src/common/constants/config.constant';
 import { ZaLaResponse } from 'src/common/helpers/response';
 import { Repository } from 'typeorm';
-import { UserHistory } from './../entities/user-history.entity';
+import { LoginHistory } from '../entities/loginHistory.entity';
 
 @Injectable()
 export class UserService {
   constructor(
-    @InjectRepository(UserHistory)
-    private readonly userHistoryRepo: Repository<UserHistory>,
+    @InjectRepository(LoginHistory)
+    private readonly loginHistoryRepo: Repository<LoginHistory>,
     private readonly httpService: HttpService,
     private readonly configService: ConfigService
   ) {}
@@ -27,9 +27,9 @@ export class UserService {
    * @param {string} id - string - The Id of the user whose login history we want to retrive.
    * @returns an array of UserHistory objects
    */
-  async getLoginHistories(id: string): Promise<UserHistory[]> {
+  async getLoginHistories(id: string): Promise<LoginHistory[]> {
     try {
-      const history = await this.userHistoryRepo.find({
+      const history = await this.loginHistoryRepo.find({
         where: { userId: id },
       });
 

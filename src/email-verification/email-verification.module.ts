@@ -8,12 +8,13 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
 import { UserService } from '../user/user.service';
 import { AuthService } from '../auth/auth.service';
-import { UserHistory } from './../entities/user-history.entity';
+import { LoginHistory } from '../entities/loginHistory.entity';
 import { JwtHelperService } from './../auth/jwtHelper.service';
+import { OneTimePassword } from '../entities/otp.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, UserHistory]),
+    TypeOrmModule.forFeature([User, LoginHistory, OneTimePassword]),
     JwtModule.register({ publicKey: 'PUBLIC_KEY', privateKey: 'PRIVATE_KEY' }),
     HttpModule,
     ConfigModule,

@@ -3,7 +3,7 @@ import { SharedEntity } from '../common/model/sharedEntity';
 import { User } from './user.entity';
 
 @Entity()
-export class UserHistory extends SharedEntity {
+export class LoginHistory extends SharedEntity {
   @Column({ nullable: true })
   login_time?: string;
 
@@ -22,7 +22,7 @@ export class UserHistory extends SharedEntity {
   @Column({ nullable: true })
   userId?: string;
 
-  @ManyToOne(() => User, (user) => user.histories)
+  @ManyToOne(() => User, (user) => user.loginHistories, {onDelete: 'SET NULL'})
   @JoinColumn({ name: 'userId' })
-  history: UserHistory;
+  history: LoginHistory;
 }

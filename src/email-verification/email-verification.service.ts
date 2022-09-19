@@ -11,12 +11,16 @@ import { lastValueFrom } from 'rxjs';
 import { JwtHelperService } from '../auth/jwtHelper.service';
 import { VerifyToken } from 'src/common/interfaces/verify.interface';
 import { ClientProxy } from '@nestjs/microservices';
+import { SignupOTPDto } from './dto/email-token.dto';
+import { OneTimePassword } from 'src/entities/otp.entity';
 
 @Injectable()
 export class EmailVerificationService {
   constructor(
     @InjectRepository(User)
     private usersRepo: Repository<User>,
+    @InjectRepository(OneTimePassword)
+    private otpRepo: Repository<OneTimePassword>,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
@@ -32,12 +36,18 @@ export class EmailVerificationService {
   async sendVerificationLink(email: string) {
     try {
       const payload: VerifyToken = { email };
+
       const signupToken = this.jwtService.sign(payload, {
         secret: this.configService.get(configConstant.jwt.verify_secret),
-        expiresIn: this.configService.get(configConstant.jwt.access_time),
+        expiresIn: this.configService.get(configConstant.jwt.otp_time),
       });
+      const otp = (Math.floor(Math.random() * 899999+100000)).toString()
 
-     await this.usersRepo.update({email: email}, {signupToken: signupToken})
+      const otpSetup = await this.otpRepo.create({
+        otp: otp,
+        signupToken: signupToken
+      })
+      await this.otpRepo.save(otpSetup)
       const user = await this.usersRepo.findOne({where: {
         email: email
       }})
@@ -49,7 +59,7 @@ export class EmailVerificationService {
         configConstant.baseUrls.notificationService,
       )}/email/send-mail`
 
-      const emailBody = `Welcome to Zummit. To confirm your mail, please click the link below:\n\n\n ${completesignUpURL}`;
+      const emailBody = `Welcome to Zummit. To confirm your mail, please Enter the OTP displayed below:\n\n\n ${otp}`;
 
       const emailPaybload = {
         email,
@@ -84,20 +94,21 @@ export class EmailVerificationService {
    * @Params: token - token sent to the user
    * return - return a called function(createUserProfile) to create user profile
    */
-  async decodeEmailToken(userId: string) {
+  async decodeEmailToken(otpDto: SignupOTPDto) {
     try {
-      const {signupToken} = await this.usersRepo.findOne({where:{id: userId}})
+      const {signupToken} = await this.otpRepo.findOne({where:{otp:otpDto.otp}})
       const payload = await this.jwtService.verify(signupToken, {
         secret: this.configService.get(configConstant.jwt.verify_secret),
       });
       // Mark User email as verified
       await this.markEmailAsConfirmed(payload.email);
-
+      //delete the otp entity from the table
+      await this.otpRepo.delete({otp:otpDto.otp})
       //Create a user profile once email is verified
       const completeUser = await this.createUserProfile(payload.email);
       const user = await this.usersRepo.findOne({
         where: { email: completeUser.email },
-        select:['id','email', 'fullName', 'profileID', 'isEmailVerified', 'createdOn', 'updatedOn', 'signupToken']
+        select:['id','email', 'fullName', 'profileID', 'isEmailVerified', 'createdOn', 'updatedOn']
       });
       return user
     } catch (error) {
@@ -107,7 +118,7 @@ export class EmailVerificationService {
         throw new BadRequestException(
           ZaLaResponse.BadRequest(
             'Unathorized',
-            'signup confirmation token expired',
+            'signup otp expired',
             '401',
           ),
         );
@@ -148,6 +159,7 @@ export class EmailVerificationService {
       },
     });
     user.isEmailVerified = true;
+    user.userOTP = null
     return await this.usersRepo.save(user);
   }
 
