@@ -11,7 +11,7 @@ import { ZaLaResponse } from 'src/common/helpers/response';
 import { UserSigninDto } from './dto/user-signin.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { JwtHelperService } from './jwtHelper.service';
-import { UserHistory } from './../entities/user-history.entity';
+import { LoginHistory } from '../entities/loginHistory.entity';
 import { EmailVerificationService } from '../email-verification/email-verification.service';
 import { PasswordResetDto } from '../user/dto/password-reset.dto';
 
@@ -20,8 +20,8 @@ export class AuthService {
   constructor(
     @InjectRepository(User)
     private userRepo: Repository<User>,
-    @InjectRepository(UserHistory)
-    private userHistoryRepo: Repository<UserHistory>,
+    @InjectRepository(LoginHistory)
+    private userHistoryRepo: Repository<LoginHistory>,
     private jwtHelperService: JwtHelperService,
     private emailVerificationService: EmailVerificationService,
   ) {}

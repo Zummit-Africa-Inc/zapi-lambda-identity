@@ -17,6 +17,7 @@ export const configConstant = {
   jwt: {
     access_secret: 'ACCESS_SECRET',
     access_time: 'ACCESS_TIME',
+    otp_time:"OTP_EXPIRY_TIME",
     refresh_secret: 'REFRESH_SECRET',
     refresh_time: 'REFRESH_TIME',
     reset_time: 'RESET_TIME',

@@ -1,7 +1,7 @@
 import { Controller, Get, Param } from '@nestjs/common';
 import { UserService } from './user.service';
 import { ApiOperation } from '@nestjs/swagger';
-import { UserHistory } from './../entities/user-history.entity';
+import { LoginHistory } from '../entities/loginHistory.entity';
 import { ZaLaResponse, Ok } from 'src/common/helpers/response';
 import { AxiosResponse } from 'axios';
 
@@ -13,7 +13,7 @@ export class UserController {
   @ApiOperation({ description: 'Get user login histories' })
   async getLoginHistory(
     @Param('userId') userId: string,
-  ): Promise<Ok<UserHistory[]>> {
+  ): Promise<Ok<LoginHistory[]>> {
     const histories = await this.userService.getLoginHistories(userId);
 
     return ZaLaResponse.Ok(histories, 'Ok', 200);

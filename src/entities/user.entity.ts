@@ -2,7 +2,7 @@ import { BeforeInsert, OneToMany, Entity, Column } from 'typeorm';
 import { Exclude } from 'class-transformer';
 import { randomBytes, pbkdf2Sync } from 'crypto';
 import { SharedEntity } from '../common/model/sharedEntity';
-import { UserHistory } from './user-history.entity';
+import { LoginHistory } from './loginHistory.entity';
 
 @Entity()
 export class User extends SharedEntity {
@@ -25,12 +25,12 @@ export class User extends SharedEntity {
   @Exclude()
   refreshToken?: string;
 
+  @OneToMany(() => LoginHistory, (loginHistory) => loginHistory.history, {onDelete: 'SET NULL'})
+  loginHistories: LoginHistory[];
+
   @Column({unique: true, nullable: true})
   @Exclude()
-  signupToken?: string
-
-  @OneToMany(() => UserHistory, (history) => history.history, {onDelete: 'SET NULL'})
-  histories: UserHistory[];
+  userOTP?: string
 
   @BeforeInsert()
   public setPassword() {
