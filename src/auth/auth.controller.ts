@@ -6,6 +6,7 @@ import {
   Patch,
   Headers,
   Inject,
+  Param,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -86,10 +87,10 @@ export class AuthController {
     );
   }
 
-  @Post('/reset')
+  @Post('/reset/:token')
   @ApiOperation({ description: 'Password reset function' })
   async resetPassword(
-    @Headers('authorization') authorizationToken,
+    @Param('token') authorizationToken,
     @Body() body: PasswordResetDto,
   ): Promise<Ok<User>> {
     const updatedUser = await this.authService.resetPassword(

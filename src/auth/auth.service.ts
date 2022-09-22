@@ -244,7 +244,7 @@ export class AuthService {
     body: PasswordResetDto,
   ): Promise<User> {
     try {
-      const token = authorizationToken.split(' ')[1];
+      const token = authorizationToken;
       const { id } = await this.jwtHelperService.verifyReset(token);
       const user: User = await this.userRepo.findOne({ where: { id } });
       if (!user) {
