@@ -1,16 +1,17 @@
 import { Controller, Get, Param } from '@nestjs/common';
 import { UserService } from './user.service';
-import { ApiOperation } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { LoginHistory } from '../entities/loginHistory.entity';
 import { ZaLaResponse, Ok } from 'src/common/helpers/response';
 import { AxiosResponse } from 'axios';
 
+@ApiTags('Users')
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get('history/:userId')
-  @ApiOperation({ description: 'Get user login histories' })
+  @ApiOperation({ summary: 'Get user login histories' })
   async getLoginHistory(
     @Param('userId') userId: string,
   ): Promise<Ok<LoginHistory[]>> {
@@ -20,8 +21,10 @@ export class UserController {
   }
 
   @Get('subscription-test')
-  @ApiOperation({ description: 'test api hosted event'})
-  async testSubscription(): Promise<AxiosResponse<any>>{
-    return await (await this.userService.testSubscription()).data
+  @ApiOperation({ summary: 'Test api hosted event' })
+  async testSubscription(): Promise<AxiosResponse<any>> {
+    return await (
+      await this.userService.testSubscription()
+    ).data;
   }
 }
