@@ -217,7 +217,7 @@ export class EmailVerificationService {
     try {
       const resetUrl = `${this.configService.get(
         configConstant.baseUrls.identityFEUrl,
-      )}/${resetToken}`;
+      )}/reset-password/${resetToken}`;
       const notification_url = `${this.configService.get<string>(
         configConstant.baseUrls.notificationService,
       )}/email/send-mail`;
