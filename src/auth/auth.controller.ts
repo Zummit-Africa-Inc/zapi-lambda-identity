@@ -32,14 +32,14 @@ export class AuthController {
   ) {}
 
   @Post('/signup')
-  @ApiOperation({ description: 'Sign up a User' })
+  @ApiOperation({ summary: 'Sign up a User' })
   async signUpUser(@Body() body: UserSignupDto) {
     const response = await this.authService.signup(body);
     return ZaLaResponse.Ok(response, 'user created successfully', '201');
   }
 
   @Post('/signin')
-  @ApiOperation({ description: 'Sign in a User' })
+  @ApiOperation({ summary: 'Sign in a User' })
   async signInUser(
     @Body() dto: UserSigninDto,
     @Req() req: Request,
@@ -53,14 +53,14 @@ export class AuthController {
   }
 
   @Post('/signout')
-  @ApiOperation({ description: 'Sign out a user' })
+  @ApiOperation({ summary: 'Sign out a user' })
   async signOutUser(@Headers('authorization') refreshToken: string) {
     await this.authService.signout(refreshToken);
     return ZaLaResponse.Ok('success', 'Logged out successfully', '200');
   }
 
   @Patch('/change-password')
-  @ApiOperation({ description: 'User password change' })
+  @ApiOperation({ summary: 'User password change' })
   async changePassword(
     @Headers('authorization') refreshToken: string,
     @Body() body: ChangePasswordDto,
@@ -70,12 +70,12 @@ export class AuthController {
   }
 
   @Post('/token')
-  @ApiOperation({ description: 'Get new access token' })
+  @ApiOperation({ summary: 'Get new access token' })
   getAccess(@Body('refreshToken') token: string) {
     return this.authService.getNewTokens(token);
   }
   @Post('/forgot')
-  @ApiOperation({ description: 'submit registered email for password reset' })
+  @ApiOperation({ summary: 'Submit registered email for password reset' })
   async forgotPassword(
     @Body() body: PasswordForgotEmailDto,
   ): Promise<Ok<string[]>> {
@@ -88,7 +88,7 @@ export class AuthController {
   }
 
   @Post('/reset/:token')
-  @ApiOperation({ description: 'Password reset function' })
+  @ApiOperation({ summary: 'Reset password' })
   async resetPassword(
     @Param('token') authorizationToken,
     @Body() body: PasswordResetDto,
@@ -103,24 +103,23 @@ export class AuthController {
       '200',
     );
   }
+  @Post('/delete-user')
+  @ApiOperation({ summary: 'Delete a user' })
+  async deleteUserr(@Body() { email }: DeleteUserDto) {
+    const response = await this.authService.deleteUser(email);
+    return ZaLaResponse.Ok(response, 'user deleted successfully', '200');
+  }
 
   //Endpoints for communication testing
   @Post('/send_to_core')
-  @ApiOperation({ description: 'Core test endpoint' })
+  @ApiOperation({ summary: 'Core test endpoint' })
   async testIdentity(@Body() body: TestDto): Promise<any> {
     this.i_client.emit('identity_test', body);
   }
 
   @Post('/send_to_notification')
-  @ApiOperation({ description: 'Notification test endpoint' })
+  @ApiOperation({ summary: 'Notification test endpoint' })
   async testNotify(@Body() body: TestDto): Promise<any> {
     this.n_client.emit('notify_test', body);
-  }
-
-  @Post('/delete-user')
-  @ApiOperation({ description: 'Delete a user' })
-  async deleteUserr(@Body() {email}: DeleteUserDto) {
-    const response = await this.authService.deleteUser(email);
-    return ZaLaResponse.Ok(response, 'user deleted successfully', '200');
   }
 }
