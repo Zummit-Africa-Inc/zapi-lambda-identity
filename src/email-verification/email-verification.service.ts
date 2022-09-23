@@ -95,12 +95,12 @@ export class EmailVerificationService {
   }
 
   /*
-   * decodeEmailToken - verify if the verification token is authentic and makes
+   * varifyOtpCode - verify and check the authenticity of a an OTP code and marks
    *                    user email as verified
-   * @Params: token - token sent to the user
-   * return - return a called function(createUserProfile) to create user profile
+   * @Params: otpDto - otp sent to the user
+   * return - return a varified user
    */
-  async decodeEmailToken(otpDto: SignupOTPDto) {
+  async varifyOtpCode(otpDto: SignupOTPDto) {
     try {
       const findOtp = await this.otpRepo.findOne({
         where: { otp: otpDto.otp },
