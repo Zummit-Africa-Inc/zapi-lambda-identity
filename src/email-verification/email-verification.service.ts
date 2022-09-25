@@ -100,7 +100,7 @@ export class EmailVerificationService {
    * @Params: otpDto - otp sent to the user
    * return - return a varified user
    */
-  async varifyOtpCode(otpDto: SignupOTPDto) {
+  async verifyOtpCode(otpDto: SignupOTPDto) {
     try {
       const findOtp = await this.otpRepo.findOne({
         where: { otp: otpDto.otp },
@@ -239,7 +239,7 @@ export class EmailVerificationService {
     try {
       const resetUrl = `${this.configService.get(
         configConstant.baseUrls.identityFEUrl,
-      )}/${resetToken}`;
+      )}/reset-password/${resetToken}`;
       const notification_url = `${this.configService.get<string>(
         configConstant.baseUrls.notificationService,
       )}/email/send-mail`;

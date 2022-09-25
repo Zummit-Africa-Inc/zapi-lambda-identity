@@ -11,9 +11,11 @@ export class EmailVerificationController {
   ) {}
 
   @Post('/confirm')
-  @ApiOperation({ description: 'Enter OTP send to your email' })
-  async verifyOtp(@Body() signupOTPDto: SignupOTPDto) {
-    const user = await this.emailVerificatioService.varifyOtpCode(signupOTPDto);
+  @ApiOperation({ summary: 'Verify your email' })
+  async verifyOtpCode(@Body() signupOTPDto: SignupOTPDto) {
+    const user = await this.emailVerificatioService.verifyOtpCode(
+      signupOTPDto,
+    );
     return ZaLaResponse.Ok<object>({ user }, 'Profile created', 201);
   }
 }
