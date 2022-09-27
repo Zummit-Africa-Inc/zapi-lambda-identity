@@ -14,6 +14,8 @@ import { JwtHelperService } from './jwtHelper.service';
 import { LoginHistory } from '../entities/loginHistory.entity';
 import { EmailVerificationService } from '../email-verification/email-verification.service';
 import { PasswordResetDto } from '../user/dto/password-reset.dto';
+import { OneTimePassword } from 'src/entities/otp.entity';
+
 
 @Injectable()
 export class AuthService {
@@ -22,6 +24,8 @@ export class AuthService {
     private userRepo: Repository<User>,
     @InjectRepository(LoginHistory)
     private userHistoryRepo: Repository<LoginHistory>,
+    @InjectRepository(OneTimePassword)
+    private otpRepo: Repository<OneTimePassword>,
     private jwtHelperService: JwtHelperService,
     private emailVerificationService: EmailVerificationService,
   ) {}
@@ -220,14 +224,26 @@ export class AuthService {
           ),
         );
       }
+      // Sign a token and check if it already exists..
+      const existingToken = await this.jwtHelperService.signReset({
+        id: user.id,
+        userEmail: user.email
+      })
+
+      // if an otp with this signuptoken  exists in the database, delete it
+      if(existingToken){
+        await this.otpRepo.delete({signupToken: existingToken})
+      }
+      const otp = (Math.floor(Math.random() * 899999+100000)).toString()
 
       const emailPayload = {
         userId: user.id,
         userEmail: user.email,
         username: user.fullName,
+        otp
       };
 
-      const success = await this.emailVerificationService.sendResetPasswordLink(
+      const success = await this.emailVerificationService.sendResetPasswordOtp(
         emailPayload,
       );
 
@@ -240,12 +256,22 @@ export class AuthService {
   }
 
   async resetPassword(
-    authorizationToken: string,
     body: PasswordResetDto,
   ): Promise<User> {
     try {
-      const token = authorizationToken;
-      const { id } = await this.jwtHelperService.verifyReset(token);
+      const {otp, password} = body
+      const otpDoc = await this.otpRepo.findOne({where:{otp:otp}})
+      if (!otpDoc) {
+        throw new BadRequestException(
+          ZaLaResponse.BadRequest(
+            'Not Found Error',
+            'Incorrect OTP entered',
+            '400',
+          ),
+        );
+      }
+      const {signupToken} = otpDoc
+      const { id } = await this.jwtHelperService.verifyReset(signupToken);
       const user: User = await this.userRepo.findOne({ where: { id } });
       if (!user) {
         throw new NotFoundException(
@@ -257,13 +283,15 @@ export class AuthService {
         );
       }
       var passwordPayload = {
-        newPassword: body.password,
+        newPassword: password,
         oldPassword: user.password,
       };
       const hashedPassword = await this.jwtHelperService.newPasswordHash(
         passwordPayload,
       );
       await this.userRepo.update(id, { password: hashedPassword });
+      await this.otpRepo.delete({otp:otp})
+
       return user;
     } catch (error) {
       throw new BadRequestException(
