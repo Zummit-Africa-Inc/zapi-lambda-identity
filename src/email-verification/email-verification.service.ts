@@ -257,7 +257,7 @@ export class EmailVerificationService {
           ),
         );
       }
-      return `Reset OTP successfully sent to ${userEmail} resetToken: ${otp}`;
+      return `Reset OTP successfully sent to ${userEmail}`;
     } catch (error) {
       throw new BadRequestException(
         ZaLaResponse.BadRequest('Internal Server error', error.message, '500'),
