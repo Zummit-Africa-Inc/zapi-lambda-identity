@@ -2,6 +2,12 @@ import { IsString, MinLength, Matches, MaxLength, IsNotEmpty} from 'class-valida
 import { ApiProperty } from '@nestjs/swagger';
 
 export class PasswordResetDto {
+
+    @IsString()
+    @IsNotEmpty({message: 'password cannot be empty'})
+    @ApiProperty()
+    otp: string
+
     @IsString()
     @IsNotEmpty({message: 'password cannot be empty'})
     @ApiProperty()
@@ -15,5 +21,7 @@ export class PasswordResetDto {
         {message: 'password must contain the following: a capital letter, a number and a special character'}
     )
     password: string
+
+    
 
 }

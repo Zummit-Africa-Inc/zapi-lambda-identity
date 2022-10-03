@@ -87,16 +87,12 @@ export class AuthController {
     );
   }
 
-  @Post('/reset/:token')
+  @Post('/reset')
   @ApiOperation({ summary: 'Reset password' })
   async resetPassword(
-    @Param('token') authorizationToken,
     @Body() body: PasswordResetDto,
   ): Promise<Ok<User>> {
-    const updatedUser = await this.authService.resetPassword(
-      authorizationToken,
-      body,
-    );
+    const updatedUser = await this.authService.resetPassword(body);
     return ZaLaResponse.Ok(
       updatedUser,
       'user password reset successful',

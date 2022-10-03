@@ -58,10 +58,6 @@ export class EmailVerificationService {
           email: email,
         },
       });
-      const completesignUpURL = `${this.configService.get(
-        configConstant.baseUrls.completeSignupFE,
-      )}/${user.id}`;
-
       const notification_url = `${this.configService.get<string>(
         configConstant.baseUrls.notificationService,
       )}/email/send-mail`;
@@ -87,6 +83,17 @@ export class EmailVerificationService {
         url: notification_url,
         data: emailPaybload,
       });
+
+      const { status } = axiosResponse;
+      if (status >= 400) {
+        throw new BadRequestException(
+          ZaLaResponse.BadRequest(
+            'email Sending Error',
+            'Unable to send signup otp at this time',
+            `${status}`,
+          ),
+        );
+      }
     } catch (error) {
       throw new BadRequestException(
         ZaLaResponse.BadRequest('Internal Server Error', error.message, '500'),
@@ -230,23 +237,27 @@ export class EmailVerificationService {
   /* Receives a payload that is processed and generates a link sent to the user's email to process his
     or her password reset request
   */
-  async sendResetPasswordLink(emailPayload: any) {
-    const { userId, userEmail, username } = emailPayload;
-    const resetToken = await this.jwtHelpers.signReset({
-      id: userId,
-      userEmail,
-    });
+  async sendResetPasswordOtp(emailPayload: any) {
+    const { userId, userEmail, username, otp } = emailPayload;
     try {
-      const resetUrl = `${this.configService.get(
-        configConstant.baseUrls.identityFEUrl,
-      )}/reset-password/${resetToken}`;
+      const resetToken = await this.jwtHelpers.signReset({
+        id: userId,
+        userEmail,
+      });
+      const otpSetup = await this.otpRepo.create({
+        otp: otp,
+        signupToken: resetToken,
+      });
+      await this.otpRepo.save(otpSetup);
+
+      const firstName = username.split(' ')[1];
       const notification_url = `${this.configService.get<string>(
         configConstant.baseUrls.notificationService,
       )}/email/send-mail`;
-      const text = `Hi, ${username}, \n To proceed with your request, please click the link below:, \n\n\n ${resetUrl}`;
+      const text = `Hi, ${firstName}, \nEnter the OTP below in  OTP column provided in the reset page : \n\n\n      ${otp}`;
       const mailData = {
         email: userEmail,
-        subject: 'Password Reset Request',
+        subject: 'OTP For Password Reset',
         text: text,
       };
       // An axios request to the notification service
@@ -268,7 +279,7 @@ export class EmailVerificationService {
           ),
         );
       }
-      return `Reset link successfully sent to ${userEmail} resetToken: ${resetToken}`;
+      return `Reset OTP successfully sent to ${userEmail}`;
     } catch (error) {
       throw new BadRequestException(
         ZaLaResponse.BadRequest('Internal Server error', error.message, '500'),
