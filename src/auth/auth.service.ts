@@ -319,19 +319,20 @@ export class AuthService {
           ),
         );
       }
+
+      const profileID = user.profileID;
+      await this.userRepo.delete({ email });
       //  send Delete request to the profile service to delete the user profile
       // Axios
       const coreUrl = `${this.configService.get<string>(
         configConstant.baseUrls.coreService,
-      )}/profile/${user.profileID}`;
-      console.log(coreUrl);
+      )}/profile/${profileID}`;
 
       await this.httpService.axiosRef({
         method: 'delete',
         url: coreUrl,
       });
 
-      return await this.userRepo.delete({ email });
     } catch (error) {
       throw new BadRequestException(
         ZaLaResponse.BadRequest(error.name, error.message, error.status),
