@@ -22,7 +22,7 @@ export class LoginHistory extends SharedEntity {
   @Column({ nullable: true })
   userId?: string;
 
-  @ManyToOne(() => User, (user) => user.loginHistories, {onDelete: 'SET NULL'})
+  @ManyToOne(() => User, (user) => user.loginHistories, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
   history: LoginHistory;
 }

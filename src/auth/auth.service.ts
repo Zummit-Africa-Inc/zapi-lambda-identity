@@ -15,7 +15,9 @@ import { LoginHistory } from '../entities/loginHistory.entity';
 import { EmailVerificationService } from '../email-verification/email-verification.service';
 import { PasswordResetDto } from '../user/dto/password-reset.dto';
 import { OneTimePassword } from 'src/entities/otp.entity';
-
+import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
+import { configConstant } from '../common/constants/config.constant';
 
 @Injectable()
 export class AuthService {
@@ -28,24 +30,28 @@ export class AuthService {
     private otpRepo: Repository<OneTimePassword>,
     private jwtHelperService: JwtHelperService,
     private emailVerificationService: EmailVerificationService,
+    private readonly configService: ConfigService,
+    private readonly httpService: HttpService,
   ) {}
 
   async signup(user: UserSignupDto): Promise<string> {
     // const userdata = Object.assign(new User(), user);
-    const userExists = await this.userRepo.findOne({ where: { email: user.email}})
-    if(userExists){
+    const userExists = await this.userRepo.findOne({
+      where: { email: user.email },
+    });
+    if (userExists) {
       throw new BadRequestException(
         ZaLaResponse.BadRequest(
           'Duplicate Values',
           'The Email already exists',
-          "400",
+          '400',
         ),
       );
     }
     const newUser = this.userRepo.create(user);
-    await this.userRepo.save(newUser)
+    await this.userRepo.save(newUser);
     await this.emailVerificationService.sendVerificationLink(user.email);
-    return "Signup Successful, check your email to complete the sign up"
+    return 'Signup Successful, check your email to complete the sign up';
     // const newUser = await this.userRepo.save(userdata).catch(async (error) => {
     //   this.emailVerificationService.resendVerificationLink(user.email);
     //   throw new BadRequestException(
@@ -227,20 +233,20 @@ export class AuthService {
       // Sign a token and check if it already exists..
       const existingToken = await this.jwtHelperService.signReset({
         id: user.id,
-        userEmail: user.email
-      })
+        userEmail: user.email,
+      });
 
       // if an otp with this signuptoken  exists in the database, delete it
-      if(existingToken){
-        await this.otpRepo.delete({signupToken: existingToken})
+      if (existingToken) {
+        await this.otpRepo.delete({ signupToken: existingToken });
       }
-      const otp = (Math.floor(Math.random() * 899999+100000)).toString()
+      const otp = Math.floor(Math.random() * 899999 + 100000).toString();
 
       const emailPayload = {
         userId: user.id,
         userEmail: user.email,
         username: user.fullName,
-        otp
+        otp,
       };
 
       const success = await this.emailVerificationService.sendResetPasswordOtp(
@@ -255,12 +261,10 @@ export class AuthService {
     }
   }
 
-  async resetPassword(
-    body: PasswordResetDto,
-  ): Promise<User> {
+  async resetPassword(body: PasswordResetDto): Promise<User> {
     try {
-      const {otp, password} = body
-      const otpDoc = await this.otpRepo.findOne({where:{otp:otp}})
+      const { otp, password } = body;
+      const otpDoc = await this.otpRepo.findOne({ where: { otp: otp } });
       if (!otpDoc) {
         throw new BadRequestException(
           ZaLaResponse.BadRequest(
@@ -270,7 +274,7 @@ export class AuthService {
           ),
         );
       }
-      const {signupToken} = otpDoc
+      const { signupToken } = otpDoc;
       const { id } = await this.jwtHelperService.verifyReset(signupToken);
       const user: User = await this.userRepo.findOne({ where: { id } });
       if (!user) {
@@ -290,7 +294,7 @@ export class AuthService {
         passwordPayload,
       );
       await this.userRepo.update(id, { password: hashedPassword });
-      await this.otpRepo.delete({otp:otp})
+      await this.otpRepo.delete({ otp: otp });
 
       return user;
     } catch (error) {
@@ -301,12 +305,46 @@ export class AuthService {
   }
 
   deleteUser = async (email: string) => {
-    const resp = await this.userRepo.delete({ email });
-    if (resp.affected == 0) {
+    try {
+      const user = await this.userRepo.findOne({
+        where: { email },
+      });
+
+      if (!user) {
+        throw new BadRequestException(
+          ZaLaResponse.BadRequest(
+            'User Not found',
+            'The Email Does not exists',
+            '400',
+          ),
+        );
+      }
+      //  send Delete request to the profile service to delete the user profile
+      // Axios
+      const coreUrl = `${this.configService.get<string>(
+        configConstant.baseUrls.coreService,
+      )}/profile/${user.profileID}`;
+
+      const profileResponse = await this.httpService.axiosRef({
+        method: 'delete',
+        url: coreUrl,
+      });
+
+      if (profileResponse.data.status !== 200) {
+        throw new BadRequestException(
+          ZaLaResponse.BadRequest(
+            'Profile Not deleted',
+            'Error occured while deleting user Profile',
+            '400',
+          ),
+        );
+      }
+
+      return await this.userRepo.delete({ email });
+    } catch (error) {
       throw new BadRequestException(
-        ZaLaResponse.BadRequest('error', 'User does not exist', '400'),
+        ZaLaResponse.BadRequest(error.name, error.message, error.status),
       );
     }
-    return resp;
   };
 }

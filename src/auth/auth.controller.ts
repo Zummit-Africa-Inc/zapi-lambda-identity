@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Delete,
   Body,
   Req,
   Patch,
@@ -99,11 +100,11 @@ export class AuthController {
       '200',
     );
   }
-  @Post('/delete-user')
+  @Delete('/delete-user')
   @ApiOperation({ summary: 'Delete a user' })
   async deleteUserr(@Body() { email }: DeleteUserDto) {
-    const response = await this.authService.deleteUser(email);
-    return ZaLaResponse.Ok(response, 'user deleted successfully', '200');
+    await this.authService.deleteUser(email);
+    return ZaLaResponse.Ok( 'user deleted successfully', '200');
   }
 
   //Endpoints for communication testing

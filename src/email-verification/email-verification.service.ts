@@ -1,4 +1,9 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -41,27 +46,28 @@ export class EmailVerificationService {
         secret: this.configService.get(configConstant.jwt.verify_secret),
         expiresIn: this.configService.get(configConstant.jwt.otp_time),
       });
-      const otp = (Math.floor(Math.random() * 899999+100000)).toString()
+      const otp = Math.floor(Math.random() * 899999 + 100000).toString();
 
       const otpSetup = await this.otpRepo.create({
         otp: otp,
-        signupToken: signupToken
-      })
-      await this.otpRepo.save(otpSetup)
-      const user = await this.usersRepo.findOne({where: {
-        email: email
-      }})
+        signupToken: signupToken,
+      });
+      await this.otpRepo.save(otpSetup);
+      const user = await this.usersRepo.findOne({
+        where: {
+          email: email,
+        },
+      });
       const notification_url = `${this.configService.get<string>(
         configConstant.baseUrls.notificationService,
-      )}/email/send-mail`
-
+      )}/email/send-mail`;
       const emailBody = `Welcome to Zummit. To confirm your mail, please Enter the OTP displayed below:\n\n\n ${otp}`;
 
       const emailPaybload = {
         email,
-        subject: "Confirm Email",
-        text: emailBody
-      }
+        subject: 'Confirm Email',
+        text: emailBody,
+      };
 
       /* Sending a message to the notification service to send an email to the user via rabbitMQ. */
       // this.client.emit('verification', {
@@ -71,22 +77,22 @@ export class EmailVerificationService {
       // });
 
       /* making axios request to the notification service*/
-      const call = this.httpService.axiosRef
+      const call = this.httpService.axiosRef;
       const axiosResponse = await call({
         method: 'POST',
         url: notification_url,
-        data: emailPaybload
-      })
+        data: emailPaybload,
+      });
 
-      const {status} = axiosResponse
-      if(status >= 400){
+      const { status } = axiosResponse;
+      if (status >= 400) {
         throw new BadRequestException(
-        ZaLaResponse.BadRequest(
-          'email Sending Error',
-          'Unable to send signup otp at this time',
-          `${status}`,
-        ),
-      );
+          ZaLaResponse.BadRequest(
+            'email Sending Error',
+            'Unable to send signup otp at this time',
+            `${status}`,
+          ),
+        );
       }
     } catch (error) {
       throw new BadRequestException(
@@ -103,31 +109,48 @@ export class EmailVerificationService {
    */
   async decodeEmailToken(otpDto: SignupOTPDto) {
     try {
-      const {signupToken} = await this.otpRepo.findOne({where:{otp:otpDto.otp}})
-      const payload = await this.jwtService.verify(signupToken, {
+      const findOtp = await this.otpRepo.findOne({
+        where: { otp: otpDto.otp },
+      });
+
+      // check and thwor error if the return value is null
+      if (!findOtp) {
+        throw new BadRequestException(
+          ZaLaResponse.BadRequest(
+            'Invalid Token',
+            'Get the correct token and try again',
+          ),
+        );
+      }
+
+      const payload = await this.jwtService.verify(findOtp.signupToken, {
         secret: this.configService.get(configConstant.jwt.verify_secret),
       });
       // Mark User email as verified
       await this.markEmailAsConfirmed(payload.email);
       //delete the otp entity from the table
-      await this.otpRepo.delete({otp:otpDto.otp})
+      await this.otpRepo.delete({ otp: otpDto.otp });
       //Create a user profile once email is verified
       const completeUser = await this.createUserProfile(payload.email);
       const user = await this.usersRepo.findOne({
         where: { email: completeUser.email },
-        select:['id','email', 'fullName', 'profileID', 'isEmailVerified', 'createdOn', 'updatedOn']
+        select: [
+          'id',
+          'email',
+          'fullName',
+          'profileID',
+          'isEmailVerified',
+          'createdOn',
+          'updatedOn',
+        ],
       });
-      return user
+      return user;
     } catch (error) {
-      if (error?.name === 'TokenExpiredError') 
+      if (error?.name === 'TokenExpiredError')
         /*resend the verification link to the user */
         // this.sendVerificationLink((await this.usersRepo.findOne({where:{id:userId}})).email)
         throw new BadRequestException(
-          ZaLaResponse.BadRequest(
-            'Unathorized',
-            'signup otp expired',
-            '401',
-          ),
+          ZaLaResponse.BadRequest('Unathorized', 'signup otp expired', '401'),
         );
 
       // throw error if user profile cant be created
@@ -166,7 +189,7 @@ export class EmailVerificationService {
       },
     });
     user.isEmailVerified = true;
-    user.userOTP = null
+    user.userOTP = null;
     return await this.usersRepo.save(user);
   }
 
@@ -185,31 +208,30 @@ export class EmailVerificationService {
     if (!newUser) {
       throw new NotFoundException(
         ZaLaResponse.NotFoundRequest(
-          "Not Found Error",
-          "User with the given email not found",
-          "404"
-        )
-      )
-    }
-      // TODO: send POST request to the profile service to create the profile
-      // Axios
-      const new_Profile = await this.httpService.post(
-        `${this.configService.get<string>(
-          configConstant.baseUrls.coreService,
-        )}/profile/create`,
-        {
-          email: newUser.email,
-          userId: newUser.id,
-        },
+          'Not Found Error',
+          'User with the given email not found',
+          '404',
+        ),
       );
+    }
+    // TODO: send POST request to the profile service to create the profile
+    // Axios
+    const new_Profile = await this.httpService.post(
+      `${this.configService.get<string>(
+        configConstant.baseUrls.coreService,
+      )}/profile/create`,
+      {
+        email: newUser.email,
+        userId: newUser.id,
+      },
+    );
 
-      const newProfile = await lastValueFrom(new_Profile.pipe());
-      const profileData = newProfile.data.data;
-      newUser.profileID = profileData.id;
+    const newProfile = await lastValueFrom(new_Profile.pipe());
+    const profileData = newProfile.data.data;
+    newUser.profileID = profileData.id;
 
-      const new_User = await this.usersRepo.save(newUser);
-      return new_User;
-    
+    const new_User = await this.usersRepo.save(newUser);
+    return new_User;
   }
 
   /* Receives a payload that is processed and generates a link sent to the user's email to process his
@@ -219,16 +241,16 @@ export class EmailVerificationService {
     const { userId, userEmail, username, otp } = emailPayload;
     try {
       const resetToken = await this.jwtHelpers.signReset({
-      id: userId,
-      userEmail,
+        id: userId,
+        userEmail,
       });
       const otpSetup = await this.otpRepo.create({
-          otp: otp,
-          signupToken: resetToken
-      })
-      await this.otpRepo.save(otpSetup)
+        otp: otp,
+        signupToken: resetToken,
+      });
+      await this.otpRepo.save(otpSetup);
 
-      const firstName = username.split(' ')[1]
+      const firstName = username.split(' ')[1];
       const notification_url = `${this.configService.get<string>(
         configConstant.baseUrls.notificationService,
       )}/email/send-mail`;
