@@ -30,7 +30,7 @@ export class EmailVerificationService {
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
     private readonly jwtHelpers: JwtHelperService,
-    @Inject('NOTIFY_SERVICE') private readonly client: ClientProxy,
+    @Inject('NOTIFY_SERVICE') private readonly n_client: ClientProxy,
   ) {}
 
   /*
@@ -38,7 +38,7 @@ export class EmailVerificationService {
    * @Params: email - email created by the user
    * return - return a http request to send email notification
    */
-  async sendVerificationLink(email: string) {
+  async sendVerificationLink(email: string): Promise<void> {
     try {
       const payload: VerifyToken = { email };
 
@@ -48,52 +48,20 @@ export class EmailVerificationService {
       });
       const otp = Math.floor(Math.random() * 899999 + 100000).toString();
 
-      const otpSetup = await this.otpRepo.create({
+      const otpSetup = this.otpRepo.create({
         otp: otp,
         signupToken: signupToken,
       });
       await this.otpRepo.save(otpSetup);
-      const user = await this.usersRepo.findOne({
-        where: {
-          email: email,
-        },
-      });
-      const notification_url = `${this.configService.get<string>(
-        configConstant.baseUrls.notificationService,
-      )}/email/send-mail`;
       const emailBody = `Welcome to Zummit. To confirm your mail, please Enter the OTP displayed below:\n\n\n ${otp}`;
 
-      const emailPaybload = {
+      const mailPayload = {
         email,
         subject: 'Confirm Email',
         text: emailBody,
       };
 
-      /* Sending a message to the notification service to send an email to the user via rabbitMQ. */
-      // this.client.emit('verification', {
-      //   email,
-      //   subject: 'Confirm Email',
-      //   text: emailBody,
-      // });
-
-      /* making axios request to the notification service*/
-      const call = this.httpService.axiosRef;
-      const axiosResponse = await call({
-        method: 'POST',
-        url: notification_url,
-        data: emailPaybload,
-      });
-
-      const { status } = axiosResponse;
-      if (status >= 400) {
-        throw new BadRequestException(
-          ZaLaResponse.BadRequest(
-            'email Sending Error',
-            'Unable to send signup otp at this time',
-            `${status}`,
-          ),
-        );
-      }
+      this.sendMail('mail', mailPayload);
     } catch (error) {
       throw new BadRequestException(
         ZaLaResponse.BadRequest('Internal Server Error', error.message, '500'),
@@ -109,12 +77,12 @@ export class EmailVerificationService {
    */
   async decodeEmailToken(otpDto: SignupOTPDto) {
     try {
-      const findOtp = await this.otpRepo.findOne({
+      const otp = await this.otpRepo.findOne({
         where: { otp: otpDto.otp },
       });
 
       // check and thwor error if the return value is null
-      if (!findOtp) {
+      if (!otp) {
         throw new BadRequestException(
           ZaLaResponse.BadRequest(
             'Invalid Token',
@@ -123,13 +91,13 @@ export class EmailVerificationService {
         );
       }
 
-      const payload = await this.jwtService.verify(findOtp.signupToken, {
+      const payload = await this.jwtService.verify(otp.signupToken, {
         secret: this.configService.get(configConstant.jwt.verify_secret),
       });
       // Mark User email as verified
       await this.markEmailAsConfirmed(payload.email);
       //delete the otp entity from the table
-      await this.otpRepo.delete({ otp: otpDto.otp });
+      await this.otpRepo.delete(otp.id);
       //Create a user profile once email is verified
       const completeUser = await this.createUserProfile(payload.email);
       const user = await this.usersRepo.findOne({
@@ -200,38 +168,42 @@ export class EmailVerificationService {
    * return - return a http request to send email notification
    */
   async createUserProfile(email: string) {
-    const newUser = await this.usersRepo.findOne({
-      where: {
-        email,
-      },
-    });
-    if (!newUser) {
-      throw new NotFoundException(
-        ZaLaResponse.NotFoundRequest(
-          'Not Found Error',
-          'User with the given email not found',
-          '404',
-        ),
+    try {
+      const newUser = await this.usersRepo.findOne({
+        where: {
+          email,
+        },
+      });
+      if (!newUser) {
+        throw new NotFoundException(
+          ZaLaResponse.NotFoundRequest(
+            'Not Found Error',
+            'User with the given email not found',
+            '404',
+          ),
+        );
+      }
+
+      /* Making a post request to the core service to create a profile for the user. */
+      const new_Profile = this.httpService.post(
+        `${this.configService.get<string>(
+          configConstant.baseUrls.coreService,
+        )}/profile/create`,
+        {
+          email: newUser.email,
+          userId: newUser.id,
+        },
+      );
+
+      const {
+        data: { data },
+      } = await lastValueFrom(new_Profile.pipe());
+      return await this.usersRepo.save({ ...newUser, profileID: data.id });
+    } catch (error) {
+      throw new BadRequestException(
+        ZaLaResponse.BadRequest('Internal Server error', error.message, '500'),
       );
     }
-    // TODO: send POST request to the profile service to create the profile
-    // Axios
-    const new_Profile = await this.httpService.post(
-      `${this.configService.get<string>(
-        configConstant.baseUrls.coreService,
-      )}/profile/create`,
-      {
-        email: newUser.email,
-        userId: newUser.id,
-      },
-    );
-
-    const newProfile = await lastValueFrom(new_Profile.pipe());
-    const profileData = newProfile.data.data;
-    newUser.profileID = profileData.id;
-
-    const new_User = await this.usersRepo.save(newUser);
-    return new_User;
   }
 
   /* Receives a payload that is processed and generates a link sent to the user's email to process his
@@ -244,42 +216,40 @@ export class EmailVerificationService {
         id: userId,
         userEmail,
       });
-      const otpSetup = await this.otpRepo.create({
+      const otpSetup = this.otpRepo.create({
         otp: otp,
         signupToken: resetToken,
       });
       await this.otpRepo.save(otpSetup);
 
       const firstName = username.split(' ')[1];
-      const notification_url = `${this.configService.get<string>(
-        configConstant.baseUrls.notificationService,
-      )}/email/send-mail`;
+
       const text = `Hi, ${firstName}, \nEnter the OTP below in  OTP column provided in the reset page : \n\n\n      ${otp}`;
       const mailData = {
         email: userEmail,
         subject: 'OTP For Password Reset',
         text: text,
       };
-      // An axios request to the notification service
-      const call = this.httpService.axiosRef;
-      const axiosResponse = await call({
-        method: 'POST',
-        url: notification_url,
-        data: mailData,
-      });
 
-      const { status } = axiosResponse;
-      const statusString = status.toString();
-      if (status >= 400) {
-        throw new BadRequestException(
-          ZaLaResponse.BadRequest(
-            'failed',
-            'unable to send reset link at the moment',
-            statusString,
-          ),
-        );
-      }
+      await this.sendMail('mail', mailData);
+
       return `Reset OTP successfully sent to ${userEmail}`;
+    } catch (error) {
+      throw new BadRequestException(
+        ZaLaResponse.BadRequest('Internal Server error', error.message, '500'),
+      );
+    }
+  }
+
+  /**
+   * It sends a message to notification service using rabbitMQ client
+   * @param {string} pattern - The pattern to send the message to.
+   * @param {object} body - body of the message
+   */
+
+  async sendMail(pattern: string, payload: object): Promise<void> {
+    try {
+      this.n_client.emit(pattern, payload);
     } catch (error) {
       throw new BadRequestException(
         ZaLaResponse.BadRequest('Internal Server error', error.message, '500'),
