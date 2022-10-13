@@ -21,7 +21,7 @@ export class UserSignupDto {
     @MaxLength(20, 
         { message: 'password is too long. Maximal length is $constraint1 characters, but actual is $value'}
     )
-    @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/, 
+    @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?!.*\s).{8,20}$/, 
         {message: 'password must contain the following: a capital letter, a small letter, and a number'}
     )
     password: string
