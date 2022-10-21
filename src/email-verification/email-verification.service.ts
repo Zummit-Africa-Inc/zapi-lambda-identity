@@ -184,6 +184,19 @@ export class EmailVerificationService {
         );
       }
 
+      const createProfileToken = this.jwtService.sign(
+        { userId: newUser.id },
+        {
+          secret: this.configService.get(configConstant.jwt.access_secret),
+          expiresIn: this.configService.get(configConstant.jwt.otp_time),
+        },
+      );
+
+      const headers = {
+        'Content-Type': 'application/json',
+        'x-zapi-auth-token': `Bearer ${createProfileToken}`,
+      };
+
       /* Making a post request to the core service to create a profile for the user. */
       const new_Profile = this.httpService.post(
         `${this.configService.get<string>(
@@ -192,6 +205,9 @@ export class EmailVerificationService {
         {
           email: newUser.email,
           userId: newUser.id,
+        },
+        {
+          headers: headers,
         },
       );
 

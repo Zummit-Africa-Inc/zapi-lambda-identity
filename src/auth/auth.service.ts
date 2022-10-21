@@ -163,6 +163,7 @@ export class AuthService {
       const refreshobject = {
         userAgent: values.userAgent,
         ipAddress: values.ipAddress,
+        profileId: user.profileID,
         id: user.id,
       };
 
