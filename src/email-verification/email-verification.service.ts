@@ -187,7 +187,7 @@ export class EmailVerificationService {
       const createProfileToken = this.jwtService.sign(
         { userId: newUser.id },
         {
-          secret: this.configService.get(configConstant.jwt.verify_secret),
+          secret: this.configService.get(configConstant.jwt.access_secret),
           expiresIn: this.configService.get(configConstant.jwt.otp_time),
         },
       );
