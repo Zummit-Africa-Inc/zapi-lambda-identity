@@ -18,9 +18,15 @@ import { OneTimePassword } from 'src/entities/otp.entity';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { configConstant } from '../common/constants/config.constant';
+import { GoogleSigninDto } from './dto/GoogleUser.dto';
+import { userInfo } from 'os';
 
 @Injectable()
 export class AuthService {
+  async findUser(id: string) {
+    const user = await this.userRepo.findOne({ where: { id, } });
+    return user;
+  }
   constructor(
     @InjectRepository(User)
     private userRepo: Repository<User>,
@@ -64,6 +70,55 @@ export class AuthService {
     // });
     // await this.emailVerificationService.sendVerificationLink(newUser.email);
     // return 'Signup Successful, check your email to complete the sign up';
+  }
+
+  async googleLogin(
+    dto: GoogleSigninDto,
+    userValue?: { userAgent: '1'; ipAddress: '1' },
+  ) {
+    if (dto.emailVerified) {
+      const user = await this.userRepo.findOne({ where: { email: dto.email } });
+
+      if(user){
+
+        try {
+          const tokens = await this.getNewRefreshAndAccessTokens(userValue, user);
+  
+          // add userInfo to the list of user history
+          const createHistory = this.userHistoryRepo.create({
+            login_time: dto.userInfo.login_time,
+            country: dto.userInfo.country,
+            ip_address: dto.userInfo.ip_address,
+            browser_name: dto.userInfo.browser_name,
+            os_name: dto.userInfo.os_name,
+            history: user,
+          });
+          await this.userHistoryRepo.save(createHistory);
+          user.refreshToken = tokens.refresh;
+  
+          return {
+            ...tokens,
+            userId: user.id,
+            profileId: user.profileID,
+            email: user.email,
+            fullName: user.fullName,
+          };
+        } catch (error) {
+          throw new BadRequestException(
+            ZaLaResponse.BadRequest(error.name, error.message, error.status),
+          );
+        }
+      }
+      //signup
+      
+      
+      const newUser = this.userRepo.create(user);
+      await this.userRepo.save(newUser);
+      await this.emailVerificationService.sendVerificationLink(user.email);
+      return 'Signup Successful, check your email to complete the sign up';
+    }
+
+    return ;
   }
 
   /**

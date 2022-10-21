@@ -7,6 +7,9 @@ import { AppDataSource } from 'ormconfig';
 import { UsersModule } from './user/user.module';
 import { ConfigModule } from '@nestjs/config';
 import { queue } from './common/Micoservices/RabbitMqQueues';
+import { APP_GUARD } from '@nestjs/core';
+import { GoogleAuthGuard } from './common/guards/google-auth.guard';
+import { PassportModule } from '@nestjs/passport';
 
 /* Creating a queue for the microservice. */
 const IdentityService = queue(
@@ -31,9 +34,18 @@ const NotifyService = queue(
       isGlobal: true,
     }),
     TypeOrmModule.forRoot(AppDataSource.options),
+    PassportModule.register({ session: true }),
   ],
   controllers: [AppController],
-  providers: [AppService, IdentityService, NotifyService],
+  providers: [
+    AppService,
+    IdentityService,
+    NotifyService,
+    {
+      provide: APP_GUARD,
+      useClass: GoogleAuthGuard,
+    },
+  ],
   exports: [IdentityService, NotifyService],
 })
 export class AppModule {}

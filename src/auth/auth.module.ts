@@ -12,6 +12,10 @@ import { ConfigService } from '@nestjs/config';
 import { EmailVerificationModule } from 'src/email-verification/email-verification.module';
 import { HttpModule } from '@nestjs/axios';
 import { OneTimePassword } from 'src/entities/otp.entity';
+import { APP_GUARD } from '@nestjs/core';
+import { GoogleAuthGuard } from 'src/common/guards/google-auth.guard';
+import { GoogleStrategy } from 'src/common/strategy/google.strategy';
+import { SessionSerializer } from 'src/common/serializer/serilizer';
 
 @Module({
   imports: [
@@ -30,6 +34,12 @@ import { OneTimePassword } from 'src/entities/otp.entity';
     JwtHelperService,
     JwtService,
     ConfigService,
+    GoogleStrategy,
+    SessionSerializer,
+    {
+      provide: APP_GUARD,
+      useClass: GoogleAuthGuard,
+    },
   ],
 })
 export class AuthModule {}
