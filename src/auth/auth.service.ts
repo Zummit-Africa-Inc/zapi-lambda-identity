@@ -18,6 +18,8 @@ import { OneTimePassword } from 'src/entities/otp.entity';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { configConstant } from '../common/constants/config.constant';
+import { GoogleSigninDto } from './dto/google-signin.dto';
+import { OAuth2Client } from 'google-auth-library';
 
 @Injectable()
 export class AuthService {
@@ -119,6 +121,101 @@ export class AuthService {
         email: user.email,
         fullName: user.fullName,
       };
+    } catch (error) {
+      throw new BadRequestException(
+        ZaLaResponse.BadRequest(error.name, error.message, error.status),
+      );
+    }
+  }
+
+  /**
+   * it create a user with a correct crendentials from the decoded token
+   * @param dto - object containing token
+   * @param values - an object containing userAgent and IpAddress of the user
+   * @returns {userSignInType} object containing information about the signin user
+   */
+  async googleSignin(
+    dto: GoogleSigninDto,
+    values: { userAgent: string; ipAddress: string },
+  ) {
+    try {
+      console.log({ dto });
+
+      const client = new OAuth2Client(
+        await this.configService.get(configConstant.google.clientID),
+      );
+      console.log({ client });
+      console.log(
+        'env',
+        await this.configService.get(configConstant.google.clientID)
+      );
+
+      const verifyClientToken = await client.verifyIdToken({
+        idToken: dto.token,
+        audience: await this.configService.get(configConstant.google.clientID),
+      });
+      console.log({ verifyClientToken });
+
+      const { name, email } = verifyClientToken.getPayload();
+
+      const user = await this.userRepo.findOne({ where: { email } });
+
+      if (!user) {
+        // crreate user account
+        const newUser = this.userRepo.create({
+          email,
+          fullName: name,
+          isGoogleAuthUser: true,
+        });
+        await this.userRepo.save(newUser);
+
+        await this.emailVerificationService.createUserProfile(user.email);
+
+        // add userInfo to the list of user history
+        const createHistory = this.userHistoryRepo.create({
+          login_time: dto.userInfo.login_time,
+          country: dto.userInfo.country,
+          ip_address: dto.userInfo.ip_address,
+          browser_name: dto.userInfo.browser_name,
+          os_name: dto.userInfo.os_name,
+          history: user,
+        });
+        await this.userHistoryRepo.save(createHistory);
+
+        // generate access and refresh token for successful logedIn user
+        const tokens = await this.getNewRefreshAndAccessTokens(values, user);
+        user.refreshToken = tokens.refresh;
+
+        return {
+          ...tokens,
+          userId: user.id,
+          profileId: user.profileID,
+          email: user.email,
+          fullName: user.fullName,
+        };
+      } else {
+        // generate access and refresh token for successful logedIn user
+        const tokens = await this.getNewRefreshAndAccessTokens(values, user);
+
+        // add userInfo to the list of user history
+        const createHistory = this.userHistoryRepo.create({
+          login_time: dto.userInfo.login_time,
+          country: dto.userInfo.country,
+          ip_address: dto.userInfo.ip_address,
+          browser_name: dto.userInfo.browser_name,
+          os_name: dto.userInfo.os_name,
+          history: user,
+        });
+        await this.userHistoryRepo.save(createHistory);
+
+        return {
+          ...tokens,
+          userId: user.id,
+          profileId: user.profileID,
+          email: user.email,
+          fullName: user.fullName,
+        };
+      }
     } catch (error) {
       throw new BadRequestException(
         ZaLaResponse.BadRequest(error.name, error.message, error.status),
