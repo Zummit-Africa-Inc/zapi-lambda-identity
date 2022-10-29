@@ -15,7 +15,10 @@ export class User extends SharedEntity {
   @Column({ default: false })
   isEmailVerified: boolean;
 
-  @Column()
+  @Column({ default: false })
+  isGoogleAuthUser: boolean;
+
+  @Column({ nullable: true})
   password: string;
 
   @Column({ nullable: true })
