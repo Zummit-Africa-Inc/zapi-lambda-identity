@@ -20,6 +20,7 @@ import { ConfigService } from '@nestjs/config';
 import { configConstant } from '../common/constants/config.constant';
 import { GoogleSigninDto } from './dto/google-signin.dto';
 import { OAuth2Client } from 'google-auth-library';
+import { UserInfo } from './../user/dto/userInfo.dto';
 
 @Injectable()
 export class AuthService {
@@ -150,10 +151,15 @@ export class AuthService {
 
       const { name, email } = verifyClientToken.getPayload();
 
-      const user = await this.userRepo.findOne({ where: { email } });
+      const existing_user = await this.userRepo.findOne({ where: { email } });
+      const tokens = await this.getNewRefreshAndAccessTokens(
+        values,
+        existing_user,
+      );
 
-      if (!user) {
-        // crreate user account
+      // check if user does not have an account
+      // it create an account and profile then logs the user in with a generated token
+      if (!existing_user) {
         const newUser = this.userRepo.create({
           email,
           fullName: name,
@@ -161,51 +167,29 @@ export class AuthService {
         });
         await this.userRepo.save(newUser);
 
-        await this.emailVerificationService.createUserProfile(user.email);
-
-        // add userInfo to the list of user history
-        const createHistory = this.userHistoryRepo.create({
-          login_time: dto.userInfo.login_time,
-          country: dto.userInfo.country,
-          ip_address: dto.userInfo.ip_address,
-          browser_name: dto.userInfo.browser_name,
-          os_name: dto.userInfo.os_name,
-          history: user,
-        });
-        await this.userHistoryRepo.save(createHistory);
+        await this.emailVerificationService.createUserProfile(newUser.email);
 
         // generate access and refresh token for successful logedIn user
-        const tokens = await this.getNewRefreshAndAccessTokens(values, user);
-        user.refreshToken = tokens.refresh;
+        const tokens = await this.getNewRefreshAndAccessTokens(values, newUser);
+        newUser.refreshToken = tokens.refresh;
+        this.createLoginHistory(dto.userInfo, newUser);
 
         return {
           ...tokens,
-          userId: user.id,
-          profileId: user.profileID,
-          email: user.email,
-          fullName: user.fullName,
+          userId: newUser.id,
+          profileId: newUser.profileID,
+          email: newUser.email,
+          fullName: newUser.fullName,
         };
       } else {
-        // generate access and refresh token for successful logedIn user
-        const tokens = await this.getNewRefreshAndAccessTokens(values, user);
-
-        // add userInfo to the list of user history
-        const createHistory = this.userHistoryRepo.create({
-          login_time: dto.userInfo.login_time,
-          country: dto.userInfo.country,
-          ip_address: dto.userInfo.ip_address,
-          browser_name: dto.userInfo.browser_name,
-          os_name: dto.userInfo.os_name,
-          history: user,
-        });
-        await this.userHistoryRepo.save(createHistory);
+        this.createLoginHistory(dto.userInfo, existing_user);
 
         return {
           ...tokens,
-          userId: user.id,
-          profileId: user.profileID,
-          email: user.email,
-          fullName: user.fullName,
+          userId: existing_user.id,
+          profileId: existing_user.profileID,
+          email: existing_user.email,
+          fullName: existing_user.fullName,
         };
       }
     } catch (error) {
@@ -213,6 +197,17 @@ export class AuthService {
         ZaLaResponse.BadRequest(error.name, error.message, error.status),
       );
     }
+  }
+  async createLoginHistory(userInfo: UserInfo, user: User) {
+    const createHistory = this.userHistoryRepo.create({
+      login_time: userInfo.login_time,
+      country: userInfo.country,
+      ip_address: userInfo.ip_address,
+      browser_name: userInfo.browser_name,
+      os_name: userInfo.os_name,
+      history: user,
+    });
+    await this.userHistoryRepo.save(createHistory);
   }
 
   async signout(token: string) {
