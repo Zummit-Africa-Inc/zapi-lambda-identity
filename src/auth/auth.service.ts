@@ -183,6 +183,7 @@ export class AuthService {
         };
       } else {
         this.createLoginHistory(dto.userInfo, existing_user);
+        existing_user.refreshToken = tokens.refresh;
 
         return {
           ...tokens,
