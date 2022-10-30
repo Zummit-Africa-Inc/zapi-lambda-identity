@@ -139,22 +139,14 @@ export class AuthService {
     values: { userAgent: string; ipAddress: string },
   ) {
     try {
-      console.log({ dto });
-
       const client = new OAuth2Client(
         await this.configService.get(configConstant.google.clientID),
-      );
-      console.log({ client });
-      console.log(
-        'env',
-        await this.configService.get(configConstant.google.clientID)
       );
 
       const verifyClientToken = await client.verifyIdToken({
         idToken: dto.token,
         audience: await this.configService.get(configConstant.google.clientID),
       });
-      console.log({ verifyClientToken });
 
       const { name, email } = verifyClientToken.getPayload();
 
