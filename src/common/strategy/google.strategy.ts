@@ -27,21 +27,13 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
   ): Promise<any> {
     const { displayName, emails } = profile;
     const user = {
-      fullNmae: displayName,
+      fullName: displayName,
       email: emails[0].value,
       signUpType: SignUpType.PROVIDER
      
     };
 
-    console.log({
-      fullName: displayName,
-      email: emails[0].value,
-      signUpType: SignUpType.PROVIDER,
-      accessToken,
-      
-    });
-
-    this.authService.googleSignup(user)
+    this.authService.signup(user)
 
     done(null,user);
   }

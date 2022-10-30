@@ -25,10 +25,11 @@ export class UserSignupDto {
 
   @ApiProperty()
   @IsEnum(SignUpType)
-  signUpType: SignUpType.PASSWORD;
+  signUpType: SignUpType;
 
-  @IsString()
+  
   @ValidateIf((o) => o.signUpType === SignUpType.PASSWORD)
+  @IsString()
   @IsNotEmpty({ message: 'password cannot be empty' })
   @ApiProperty()
   @ApiPropertyOptional()
@@ -44,7 +45,7 @@ export class UserSignupDto {
     message:
       'password must contain the following: a capital letter, a small letter, and a number',
   })
-  password: string;
+  password?: string;
 }
 export class DeleteUserDto {
   @IsEmail()

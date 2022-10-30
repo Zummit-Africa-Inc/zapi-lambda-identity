@@ -18,7 +18,6 @@ import { OneTimePassword } from 'src/entities/otp.entity';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { configConstant } from '../common/constants/config.constant';
-import { GoogleSigninDto } from './dto/GoogleUser.dto';
 import { userInfo } from 'os';
 
 @Injectable()
@@ -72,7 +71,7 @@ export class AuthService {
     // return 'Signup Successful, check your email to complete the sign up';
   }
 
-  async googleSignup(googleProfile: any){
+  async googleSignup(googleProfile: UserSignupDto){
     
    const  googleUser=await this.signup(googleProfile);
     return googleUser;
