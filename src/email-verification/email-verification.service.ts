@@ -18,6 +18,7 @@ import { VerifyToken } from 'src/common/interfaces/verify.interface';
 import { ClientProxy } from '@nestjs/microservices';
 import { SignupOTPDto } from './dto/email-token.dto';
 import { OneTimePassword } from 'src/entities/otp.entity';
+import { SignUpType } from 'src/common/enum';
 
 @Injectable()
 export class EmailVerificationService {
@@ -38,28 +39,44 @@ export class EmailVerificationService {
    * @Params: email - email created by the user
    * return - return a http request to send email notification
    */
-  async sendVerificationLink(email: string): Promise<void> {
+  async sendVerificationLink(
+    email: string,
+    signUpType?: SignUpType,
+  ): Promise<void> {
     try {
-      const payload: VerifyToken = { email };
+      let mailPayload={};
 
-      const signupToken = this.jwtService.sign(payload, {
-        secret: this.configService.get(configConstant.jwt.verify_secret),
-        expiresIn: this.configService.get(configConstant.jwt.otp_time),
-      });
-      const otp = Math.floor(Math.random() * 899999 + 100000).toString();
+      // ADD THE LOGIN URL IN THE MAIL BODY
+      if (signUpType === SignUpType.PROVIDER) {
+        const emailBody = `Welcome to Zummit. Your profile has been successfully created, Please click on the link below to Login:\n\n\n `;
 
-      const otpSetup = this.otpRepo.create({
-        otp: otp,
-        signupToken: signupToken,
-      });
-      await this.otpRepo.save(otpSetup);
-      const emailBody = `Welcome to Zummit. To confirm your mail, please Enter the OTP displayed below:\n\n\n ${otp}`;
+        mailPayload = {
+          email, 
+          subject: 'Google Signup Successful',
+          text: emailBody,
+        };
+      } else {
+        const payload: VerifyToken = { email };
 
-      const mailPayload = {
-        email,
-        subject: 'Confirm Email',
-        text: emailBody,
-      };
+        const signupToken = this.jwtService.sign(payload, {
+          secret: this.configService.get(configConstant.jwt.verify_secret),
+          expiresIn: this.configService.get(configConstant.jwt.otp_time),
+        });
+        const otp = Math.floor(Math.random() * 899999 + 100000).toString();
+
+        const otpSetup = this.otpRepo.create({
+          otp: otp,
+          signupToken: signupToken,
+        });
+        await this.otpRepo.save(otpSetup);
+        const emailBody = `Welcome to Zummit. To confirm your mail, please Enter the OTP displayed below:\n\n\n ${otp}`;
+
+        mailPayload = {
+          email,
+          subject: 'Confirm Email',
+          text: emailBody,
+        };
+      }
 
       this.sendMail('mail', mailPayload);
     } catch (error) {

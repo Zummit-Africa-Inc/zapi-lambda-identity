@@ -49,15 +49,15 @@ export class AuthService {
       throw new BadRequestException(
         ZaLaResponse.BadRequest(
           'Duplicate Values',
-          'The Email already exists',
+          'The Email already exists, login in with google',
           '400',
         ),
       );
     }
     const newUser = this.userRepo.create(user);
     await this.userRepo.save(newUser);
-    await this.emailVerificationService.sendVerificationLink(user.email);
-    return 'Signup Successful, check your email to complete the sign up';
+    await this.emailVerificationService.sendVerificationLink(user.email,user.signUpType);
+    return 'Signup Successful, check your email to complete the signup/login process';
     // const newUser = await this.userRepo.save(userdata).catch(async (error) => {
     //   this.emailVerificationService.resendVerificationLink(user.email);
     //   throw new BadRequestException(
@@ -72,53 +72,10 @@ export class AuthService {
     // return 'Signup Successful, check your email to complete the sign up';
   }
 
-  async googleLogin(
-    dto: GoogleSigninDto,
-    userValue?: { userAgent: '1'; ipAddress: '1' },
-  ) {
-    if (dto.emailVerified) {
-      const user = await this.userRepo.findOne({ where: { email: dto.email } });
-
-      if(user){
-
-        try {
-          const tokens = await this.getNewRefreshAndAccessTokens(userValue, user);
-  
-          // add userInfo to the list of user history
-          const createHistory = this.userHistoryRepo.create({
-            login_time: dto.userInfo.login_time,
-            country: dto.userInfo.country,
-            ip_address: dto.userInfo.ip_address,
-            browser_name: dto.userInfo.browser_name,
-            os_name: dto.userInfo.os_name,
-            history: user,
-          });
-          await this.userHistoryRepo.save(createHistory);
-          user.refreshToken = tokens.refresh;
-  
-          return {
-            ...tokens,
-            userId: user.id,
-            profileId: user.profileID,
-            email: user.email,
-            fullName: user.fullName,
-          };
-        } catch (error) {
-          throw new BadRequestException(
-            ZaLaResponse.BadRequest(error.name, error.message, error.status),
-          );
-        }
-      }
-      //signup
-      
-      
-      const newUser = this.userRepo.create(user);
-      await this.userRepo.save(newUser);
-      await this.emailVerificationService.sendVerificationLink(user.email);
-      return 'Signup Successful, check your email to complete the sign up';
-    }
-
-    return ;
+  async googleSignup(googleProfile: any){
+    
+   const  googleUser=await this.signup(googleProfile);
+    return googleUser;
   }
 
   /**
