@@ -37,12 +37,16 @@ export class User extends SharedEntity {
 
   @BeforeInsert()
   public setPassword() {
-    let salt = randomBytes(32).toString('hex');
-    let hash = pbkdf2Sync(this.password, salt, 1000, 64, 'sha512').toString(
-      'hex',
-    );
-    let hashedPassword = `${salt}:${hash}`;
-    this.password = hashedPassword;
-    return this.password;
+    if (this.password) {
+      let salt = randomBytes(32).toString('hex');
+      let hash = pbkdf2Sync(this.password, salt, 1000, 64, 'sha512').toString(
+        'hex',
+      );
+      let hashedPassword = `${salt}:${hash}`;
+      this.password = hashedPassword;
+      return this.password;
+    } else {
+      return this.password;
+    }
   }
 }
