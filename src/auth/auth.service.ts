@@ -18,7 +18,10 @@ import { OneTimePassword } from 'src/entities/otp.entity';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { configConstant } from '../common/constants/config.constant';
-
+import { GoogleSigninDto } from './dto/google-signin.dto';
+import { OAuth2Client } from 'google-auth-library';
+import { UserInfo } from './../user/dto/userInfo.dto';
+import { v4 as uuidv4 } from 'uuid';
 @Injectable()
 export class AuthService {
   constructor(
@@ -124,6 +127,95 @@ export class AuthService {
         ZaLaResponse.BadRequest(error.name, error.message, error.status),
       );
     }
+  }
+
+  /**
+   * it create a user with a correct crendentials from the decoded token
+   * @param dto - object containing token
+   * @param values - an object containing userAgent and IpAddress of the user
+   * @returns {userSignInType} object containing information about the signin user
+   */
+  async googleSignin(
+    dto: GoogleSigninDto,
+    values: { userAgent: string; ipAddress: string },
+  ) {
+    try {
+      const client = new OAuth2Client(
+        await this.configService.get(configConstant.google.clientID),
+      );
+
+      const verifyClientToken = await client.verifyIdToken({
+        idToken: dto.token,
+        audience: await this.configService.get(configConstant.google.clientID),
+      });
+
+      const { name, email } = verifyClientToken.getPayload();
+
+      const existing_user = await this.userRepo.findOne({ where: { email } });
+      const tokens = await this.jwtHelperService.googleUserTokens(
+        values,
+        existing_user,
+      );
+
+      // check if user does not have an account
+      // it create an account and profile then logs the user in with a generated token
+      // else: if the user already exist, it logs the use in
+      if (!existing_user) {
+        const newUser = this.userRepo.create({
+          id: uuidv4(),
+          email: email,
+          fullName: name,
+          isGoogleAuthUser: true,
+        });
+
+        let userProfile =
+          await this.emailVerificationService.createGoogleUserProfile(newUser);
+        const profileID = userProfile.data.id;
+
+        const tokens = await this.jwtHelperService.googleUserTokens(
+          values,
+          newUser,
+        );
+        newUser.profileID = profileID;
+        newUser.refreshToken = tokens.refresh;
+        await this.userRepo.save(newUser);
+        this.createLoginHistory(dto.userInfo, newUser);
+
+        return {
+          ...tokens,
+          userId: newUser.id,
+          profileId: newUser.profileID,
+          email: newUser.email,
+          fullName: newUser.fullName,
+        };
+      } else {
+        this.createLoginHistory(dto.userInfo, existing_user);
+        existing_user.refreshToken = tokens.refresh;
+
+        return {
+          ...tokens,
+          userId: existing_user.id,
+          profileId: existing_user.profileID,
+          email: existing_user.email,
+          fullName: existing_user.fullName,
+        };
+      }
+    } catch (error) {
+      throw new BadRequestException(
+        ZaLaResponse.BadRequest(error.name, error.message, error.status),
+      );
+    }
+  }
+  async createLoginHistory(userInfo: UserInfo, user: User) {
+    const createHistory = this.userHistoryRepo.create({
+      login_time: userInfo.login_time,
+      country: userInfo.country,
+      ip_address: userInfo.ip_address,
+      browser_name: userInfo.browser_name,
+      os_name: userInfo.os_name,
+      history: user,
+    });
+    await this.userHistoryRepo.save(createHistory);
   }
 
   async signout(token: string) {

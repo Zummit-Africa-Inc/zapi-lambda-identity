@@ -22,6 +22,7 @@ import { User } from 'src/entities/user.entity';
 import { ClientProxy } from '@nestjs/microservices';
 import { DeleteUserDto, UserSignupDto } from './dto/user-signup.dto';
 import { TestDto } from './dto/test.dto';
+import { GoogleSigninDto } from './dto/google-signin.dto';
 
 @ApiTags('Auth-Users')
 @Controller('auth')
@@ -46,6 +47,20 @@ export class AuthController {
     @Req() req: Request,
   ): Promise<Ok<userSignInType>> {
     const userSignIn = await this.authService.signin(dto, {
+      userAgent: req.headers['user-agent'],
+      ipAddress: req.ip,
+    });
+
+    return ZaLaResponse.Ok(userSignIn, 'Successfully logged in', 201);
+  }
+
+  @Post('/google')
+  @ApiOperation({ summary: 'Google user Signin' })
+  async googleSignIn(
+    @Body() dto: GoogleSigninDto,
+    @Req() req: Request,
+  ): Promise<Ok<userSignInType>> {
+    const userSignIn = await this.authService.googleSignin(dto, {
       userAgent: req.headers['user-agent'],
       ipAddress: req.ip,
     });
@@ -104,7 +119,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Delete a user' })
   async deleteUserr(@Body() { email }: DeleteUserDto) {
     await this.authService.deleteUser(email);
-    return ZaLaResponse.Ok( 'user deleted successfully', '200');
+    return ZaLaResponse.Ok('user deleted successfully', '200');
   }
 
   //Endpoints for communication testing

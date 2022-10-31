@@ -30,4 +30,7 @@ export const configConstant = {
     notify_queue: 'NOTIFY_QUEUE',
     durable: 'RABBITMQ_DURABLE',
   },
+  google: {
+    clientID: 'GOOGLE_CLIENT_ID',
+  },
 };

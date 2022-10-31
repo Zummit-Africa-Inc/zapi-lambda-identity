@@ -222,6 +222,64 @@ export class EmailVerificationService {
     }
   }
 
+  /*
+   * createGoogleUserProfile - creates a profile for google user
+   *
+   * @Params: newUser - new user instance
+   * return - return a http response of new user profile from the call to the core service
+   */
+  async createGoogleUserProfile(newUser) {
+    try {
+      const createProfileToken = this.jwtService.sign(
+        { userId: newUser.id },
+        {
+          secret: this.configService.get(configConstant.jwt.access_secret),
+          expiresIn: this.configService.get(configConstant.jwt.otp_time),
+        },
+      );
+
+      const headers = {
+        'Content-Type': 'application/json',
+        'x-zapi-auth-token': `Bearer ${createProfileToken}`,
+      };
+
+      /* Making a post request to the core service to create a profile for the user. */
+      const new_Profile = this.httpService.post(
+        `${this.configService.get<string>(
+          configConstant.baseUrls.coreService,
+        )}/profile/create`,
+        {
+          email: newUser.email,
+          userId: newUser.id,
+        },
+        {
+          headers: headers,
+        },
+      );
+
+      const { data } = await lastValueFrom(new_Profile.pipe());
+
+      if (data.status != 201)
+        throw new BadRequestException(
+          ZaLaResponse.BadRequest(
+            'Invalid crendential',
+            'User profile could not be created',
+          ),
+        );
+      return data;
+    } catch (error) {
+      console.log(error.response.data);
+
+      throw new BadRequestException(
+        ZaLaResponse.BadRequest(
+          'Internal Server error',
+          error.response.data.message,
+          '500',
+        ),
+      );
+    }
+  }
+
   /* Receives a payload that is processed and generates a link sent to the user's email to process his
     or her password reset request
   */
