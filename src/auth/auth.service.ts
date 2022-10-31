@@ -23,7 +23,7 @@ import { userInfo } from 'os';
 @Injectable()
 export class AuthService {
   async findUser(id: string) {
-    const user = await this.userRepo.findOne({ where: { id, } });
+    const user = await this.userRepo.findOne({ where: { id } });
     return user;
   }
   constructor(
@@ -55,7 +55,10 @@ export class AuthService {
     }
     const newUser = this.userRepo.create(user);
     await this.userRepo.save(newUser);
-    await this.emailVerificationService.sendVerificationLink(user.email,user.signUpType);
+    await this.emailVerificationService.sendVerificationLink(
+      user.email,
+      user.signUpType,
+    );
     return 'Signup Successful, check your email to complete the signup/login process';
     // const newUser = await this.userRepo.save(userdata).catch(async (error) => {
     //   this.emailVerificationService.resendVerificationLink(user.email);
@@ -71,9 +74,11 @@ export class AuthService {
     // return 'Signup Successful, check your email to complete the sign up';
   }
 
-  async googleSignup(googleProfile: UserSignupDto){
-    
-   const  googleUser=await this.signup(googleProfile);
+  async googleSignup(googleProfile: UserSignupDto) {
+    const googleUser = await this.signup(googleProfile);
+    const createdUser = await this.userRepo.findOne({
+      where: { email: googleProfile.email },
+    });
     return googleUser;
   }
 

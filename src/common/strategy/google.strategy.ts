@@ -33,7 +33,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
      
     };
 
-    this.authService.signup(user)
+    this.authService.googleSignup(user)
 
     done(null,user);
   }
