@@ -3,6 +3,7 @@ import { Exclude } from 'class-transformer';
 import { randomBytes, pbkdf2Sync } from 'crypto';
 import { SharedEntity } from '../common/model/sharedEntity';
 import { LoginHistory } from './loginHistory.entity';
+import { ProviderName, SignUpType } from '../common/enum';
 
 @Entity()
 export class User extends SharedEntity {
@@ -15,8 +16,14 @@ export class User extends SharedEntity {
   @Column({ default: false })
   isEmailVerified: boolean;
 
-  @Column()
-  password: string;
+  @Column({ type: 'enum', enum: SignUpType, default: SignUpType.PASSWORD })
+  signUpType: SignUpType;
+
+  @Column({ nullable: true })
+  password?: string;
+
+  @Column({ type: 'enum', enum: ProviderName, default: ProviderName.GOOGLE })
+  providerName?: ProviderName;
 
   @Column({ nullable: true })
   profileID?: string;
@@ -25,21 +32,26 @@ export class User extends SharedEntity {
   @Exclude()
   refreshToken?: string;
 
-  @OneToMany(() => LoginHistory, (loginHistory) => loginHistory.history, {onDelete: 'CASCADE'})
+  @OneToMany(() => LoginHistory, (loginHistory) => loginHistory.history, {
+    onDelete: 'CASCADE',
+  })
   loginHistories: LoginHistory[];
 
-  @Column({unique: true, nullable: true})
+  @Column({ unique: true, nullable: true })
   @Exclude()
-  userOTP?: string
+  userOTP?: string;
 
   @BeforeInsert()
   public setPassword() {
-    let salt = randomBytes(32).toString('hex');
-    let hash = pbkdf2Sync(this.password, salt, 1000, 64, 'sha512').toString(
-      'hex',
-    );
-    let hashedPassword = `${salt}:${hash}`;
-    this.password = hashedPassword;
-    return this.password;
+    if (this.password) {
+      let salt = randomBytes(32).toString('hex');
+      let hash = pbkdf2Sync(this.password, salt, 1000, 64, 'sha512').toString(
+        'hex',
+      );
+      let hashedPassword = `${salt}:${hash}`;
+      this.password = hashedPassword;
+      return this.password;
+    }
+    return null;
   }
 }

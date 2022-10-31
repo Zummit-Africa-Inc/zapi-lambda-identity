@@ -18,9 +18,14 @@ import { OneTimePassword } from 'src/entities/otp.entity';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { configConstant } from '../common/constants/config.constant';
+import { userInfo } from 'os';
 
 @Injectable()
 export class AuthService {
+  async findUser(id: string) {
+    const user = await this.userRepo.findOne({ where: { id } });
+    return user;
+  }
   constructor(
     @InjectRepository(User)
     private userRepo: Repository<User>,
@@ -43,15 +48,18 @@ export class AuthService {
       throw new BadRequestException(
         ZaLaResponse.BadRequest(
           'Duplicate Values',
-          'The Email already exists',
+          'The Email already exists, login in with google',
           '400',
         ),
       );
     }
     const newUser = this.userRepo.create(user);
     await this.userRepo.save(newUser);
-    await this.emailVerificationService.sendVerificationLink(user.email);
-    return 'Signup Successful, check your email to complete the sign up';
+    await this.emailVerificationService.sendVerificationLink(
+      user.email,
+      user.signUpType,
+    );
+    return 'Signup Successful, check your email to complete the signup/login process';
     // const newUser = await this.userRepo.save(userdata).catch(async (error) => {
     //   this.emailVerificationService.resendVerificationLink(user.email);
     //   throw new BadRequestException(
@@ -64,6 +72,14 @@ export class AuthService {
     // });
     // await this.emailVerificationService.sendVerificationLink(newUser.email);
     // return 'Signup Successful, check your email to complete the sign up';
+  }
+
+  async googleSignup(googleProfile: UserSignupDto) {
+    const googleUser = await this.signup(googleProfile);
+    const createdUser = await this.userRepo.findOne({
+      where: { email: googleProfile.email },
+    });
+    return googleUser;
   }
 
   /**

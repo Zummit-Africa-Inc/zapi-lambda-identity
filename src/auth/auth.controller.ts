@@ -8,6 +8,8 @@ import {
   Headers,
   Inject,
   Param,
+  Get,
+  UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -22,6 +24,8 @@ import { User } from 'src/entities/user.entity';
 import { ClientProxy } from '@nestjs/microservices';
 import { DeleteUserDto, UserSignupDto } from './dto/user-signup.dto';
 import { TestDto } from './dto/test.dto';
+import { AuthGuard } from '@nestjs/passport';
+import { GoogleAuthGuard } from 'src/common/guards/google-auth.guard';
 
 @ApiTags('Auth-Users')
 @Controller('auth')
@@ -38,6 +42,24 @@ export class AuthController {
     const response = await this.authService.signup(body);
     return ZaLaResponse.Ok(response, 'user created successfully', '201');
   }
+
+  @Get('/signup-using-google')
+  @UseGuards(GoogleAuthGuard)
+  @ApiOperation({ summary: 'Sign up a user using google credentials' })
+  async signupUingGoogle(@Req() req) {
+   return {req, meg:'Google Authentication'};
+  }
+
+  @Get('/google/callback')
+  @UseGuards(GoogleAuthGuard)
+  @ApiOperation({ summary: 'Signup/Signin a user using google credentials' })
+  googleAuthRedirect(@Req() req) {
+    return {req,meg:'Successfully logged in'};
+  }
+
+
+
+
 
   @Post('/signin')
   @ApiOperation({ summary: 'Sign in a User' })
@@ -90,9 +112,7 @@ export class AuthController {
 
   @Post('/reset')
   @ApiOperation({ summary: 'Reset password' })
-  async resetPassword(
-    @Body() body: PasswordResetDto,
-  ): Promise<Ok<User>> {
+  async resetPassword(@Body() body: PasswordResetDto): Promise<Ok<User>> {
     const updatedUser = await this.authService.resetPassword(body);
     return ZaLaResponse.Ok(
       updatedUser,
@@ -104,7 +124,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Delete a user' })
   async deleteUserr(@Body() { email }: DeleteUserDto) {
     await this.authService.deleteUser(email);
-    return ZaLaResponse.Ok( 'user deleted successfully', '200');
+    return ZaLaResponse.Ok('user deleted successfully', '200');
   }
 
   //Endpoints for communication testing
