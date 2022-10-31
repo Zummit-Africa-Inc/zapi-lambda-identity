@@ -21,7 +21,7 @@ import { configConstant } from '../common/constants/config.constant';
 import { GoogleSigninDto } from './dto/google-signin.dto';
 import { OAuth2Client } from 'google-auth-library';
 import { UserInfo } from './../user/dto/userInfo.dto';
-
+import { v4 as uuidv4 } from 'uuid';
 @Injectable()
 export class AuthService {
   constructor(
@@ -152,26 +152,33 @@ export class AuthService {
       const { name, email } = verifyClientToken.getPayload();
 
       const existing_user = await this.userRepo.findOne({ where: { email } });
-      const tokens = await this.getNewRefreshAndAccessTokens(
+      const tokens = await this.jwtHelperService.googleUserTokens(
         values,
         existing_user,
       );
 
       // check if user does not have an account
       // it create an account and profile then logs the user in with a generated token
+      // else: if the user already exist, it logs the use in
       if (!existing_user) {
         const newUser = this.userRepo.create({
-          email,
+          id: uuidv4(),
+          email: email,
           fullName: name,
           isGoogleAuthUser: true,
         });
-        await this.userRepo.save(newUser);
 
-        await this.emailVerificationService.createUserProfile(newUser.email);
+        let userProfile =
+          await this.emailVerificationService.createGoogleUserProfile(newUser);
+        const profileID = userProfile.data.id;
 
-        // generate access and refresh token for successful logedIn user
-        const tokens = await this.getNewRefreshAndAccessTokens(values, newUser);
+        const tokens = await this.jwtHelperService.googleUserTokens(
+          values,
+          newUser,
+        );
+        newUser.profileID = profileID;
         newUser.refreshToken = tokens.refresh;
+        await this.userRepo.save(newUser);
         this.createLoginHistory(dto.userInfo, newUser);
 
         return {
