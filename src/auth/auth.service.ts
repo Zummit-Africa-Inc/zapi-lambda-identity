@@ -142,10 +142,13 @@ export class AuthService {
     try {
       const client = new OAuth2Client(
         await this.configService.get(configConstant.google.clientID),
+        await this.configService.get(configConstant.google.secretID),
+        'postmessage',
       );
 
+      const getTokenFromCLient = await client.getToken(dto.token);
       const verifyClientToken = await client.verifyIdToken({
-        idToken: dto.token,
+        idToken: getTokenFromCLient.tokens.id_token,
         audience: await this.configService.get(configConstant.google.clientID),
       });
 
