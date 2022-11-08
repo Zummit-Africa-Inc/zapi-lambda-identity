@@ -147,18 +147,14 @@ export class AuthService {
       );
 
       const getTokenFromCLient = await client.getToken(dto.token);
+
       const verifyClientToken = await client.verifyIdToken({
         idToken: getTokenFromCLient.tokens.id_token,
         audience: await this.configService.get(configConstant.google.clientID),
       });
-
       const { name, email } = verifyClientToken.getPayload();
 
       const existing_user = await this.userRepo.findOne({ where: { email } });
-      const tokens = await this.jwtHelperService.googleUserTokens(
-        values,
-        existing_user,
-      );
 
       // check if user does not have an account
       // it create an account and profile then logs the user in with a generated token
@@ -192,6 +188,10 @@ export class AuthService {
           fullName: newUser.fullName,
         };
       } else {
+        const tokens = await this.jwtHelperService.googleUserTokens(
+          values,
+          existing_user,
+        );
         this.createLoginHistory(dto.userInfo, existing_user);
         existing_user.refreshToken = tokens.refresh;
 
