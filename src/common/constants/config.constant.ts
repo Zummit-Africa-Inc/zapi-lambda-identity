@@ -32,5 +32,6 @@ export const configConstant = {
   },
   google: {
     clientID: 'GOOGLE_CLIENT_ID',
+    secretID: 'GOOGLE_CLIENT_SECRET',
   },
 };

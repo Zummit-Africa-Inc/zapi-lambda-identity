@@ -268,8 +268,6 @@ export class EmailVerificationService {
         );
       return data;
     } catch (error) {
-      console.log(error.response.data);
-
       throw new BadRequestException(
         ZaLaResponse.BadRequest(
           'Internal Server error',
