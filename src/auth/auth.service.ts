@@ -18,7 +18,7 @@ import { OneTimePassword } from 'src/entities/otp.entity';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { configConstant } from '../common/constants/config.constant';
-import { GoogleSigninDto } from './dto/google-signin.dto';
+import { OAuthDto } from './dto/oAuth.dto';
 import { OAuth2Client } from 'google-auth-library';
 import { UserInfo } from './../user/dto/userInfo.dto';
 import { v4 as uuidv4 } from 'uuid';
@@ -136,7 +136,7 @@ export class AuthService {
    * @returns {userSignInType} object containing information about the signin user
    */
   async googleSignin(
-    dto: GoogleSigninDto,
+    dto: OAuthDto,
     values: { userAgent: string; ipAddress: string },
   ) {
     try {
@@ -209,6 +209,117 @@ export class AuthService {
       );
     }
   }
+
+  async githuAccessToken(
+    dto: OAuthDto,
+    values: { userAgent: string; ipAddress: string },
+  ) {
+    const params = `?client_id=${process.env.GITHUB_CLIENT_ID}&client_secret=${process.env.GITHUB_CLIENT_SECRET}&code=${dto.token}`;
+
+    try {
+      const getAccessToken = await this.httpService.axiosRef({
+        method: 'post',
+        url: 'https://github.com/login/oauth/access_token' + params,
+        headers: {
+          accept: 'application/json',
+        },
+      });
+
+      if (getAccessToken.data.status !== 200) {
+        throw new BadRequestException(
+          ZaLaResponse.BadRequest(
+            'Token Not Retrived',
+            'Error occured while getting Access token',
+            '400',
+          ),
+        );
+      }
+      const { access_token } = getAccessToken.data;
+
+      if (access_token) {
+        const getUserData = await this.httpService.axiosRef({
+          method: 'get',
+          url: 'https://api.github.com/user',
+          headers: {
+            accept: 'application/json',
+            Authorization: `Bearer ${access_token}`,
+          },
+        });
+
+        if (getUserData.data.status !== 200) {
+          throw new BadRequestException(
+            ZaLaResponse.BadRequest(
+              'User Not Retrived',
+              'Error occured while getting user infomation',
+              '400',
+            ),
+          );
+        }
+        const { email, name } = getUserData.data;
+
+        const existing_user = await this.userRepo.findOne({
+          where: { email },
+        });
+
+        if (!existing_user) {
+          return await this.oAuthNewUser(email, name, values, dto);
+        } else {
+          return await this.oAuthExistingUser(existing_user, dto, values);
+        }
+      }
+    } catch (error) {
+      throw new BadRequestException(
+        ZaLaResponse.BadRequest(error.name, error.message, error.status),
+      );
+    }
+  }
+
+  async oAuthNewUser(email: string, name: string, values, dto) {
+    const newUser = this.userRepo.create({
+      id: uuidv4(),
+      email: email,
+      fullName: name,
+      isGoogleAuthUser: true,
+    });
+
+    let userProfile =
+      await this.emailVerificationService.createGoogleUserProfile(newUser);
+    const profileID = userProfile.data.id;
+
+    const tokens = await this.jwtHelperService.googleUserTokens(
+      values,
+      newUser,
+    );
+    newUser.profileID = profileID;
+    newUser.refreshToken = tokens.refresh;
+    await this.userRepo.save(newUser);
+    this.createLoginHistory(dto.userInfo, newUser);
+
+    return {
+      ...tokens,
+      userId: newUser.id,
+      profileId: newUser.profileID,
+      email: newUser.email,
+      fullName: newUser.fullName,
+    };
+  }
+  async oAuthExistingUser(existing_user, dto, values) {
+    const tokens = await this.jwtHelperService.googleUserTokens(
+      values,
+      existing_user,
+    );
+    this.createLoginHistory(dto.userInfo, existing_user);
+    existing_user.refreshToken = tokens.refresh;
+
+    return {
+      ...tokens,
+      userId: existing_user.id,
+      profileId: existing_user.profileID,
+      email: existing_user.email,
+      fullName: existing_user.fullName,
+    };
+  }
+
   async createLoginHistory(userInfo: UserInfo, user: User) {
     const createHistory = this.userHistoryRepo.create({
       login_time: userInfo.login_time,
