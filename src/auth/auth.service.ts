@@ -217,6 +217,7 @@ export class AuthService {
     const params = `?client_id=${process.env.GITHUB_CLIENT_ID}&client_secret=${process.env.GITHUB_CLIENT_SECRET}&code=${dto.token}`;
 
     try {
+      // Get access token to make request to Github endpoints
       const getAccessToken = await this.httpService.axiosRef({
         method: 'post',
         url: 'https://github.com/login/oauth/access_token' + params,
@@ -225,7 +226,7 @@ export class AuthService {
         },
       });
 
-      if (getAccessToken.data.status !== 200) {
+      if (getAccessToken.status !== 200) {
         throw new BadRequestException(
           ZaLaResponse.BadRequest(
             'Token Not Retrived',
@@ -237,6 +238,7 @@ export class AuthService {
       const { access_token } = getAccessToken.data;
 
       if (access_token) {
+        // get the github profile information with the access token
         const getUserData = await this.httpService.axiosRef({
           method: 'get',
           url: 'https://api.github.com/user',
@@ -246,7 +248,7 @@ export class AuthService {
           },
         });
 
-        if (getUserData.data.status !== 200) {
+        if (getUserData.status !== 200) {
           throw new BadRequestException(
             ZaLaResponse.BadRequest(
               'User Not Retrived',
@@ -255,8 +257,28 @@ export class AuthService {
             ),
           );
         }
-        const { email, name } = getUserData.data;
+        const { name } = getUserData.data;
 
+        // get the profile email address regradless of private or public profile
+        const getUserEmail = await this.httpService.axiosRef({
+          method: 'get',
+          url: 'https://api.github.com/user/emails',
+          headers: {
+            accept: 'application/json',
+            Authorization: `Bearer ${access_token}`,
+          },
+        });
+
+        if (getUserEmail.status !== 200) {
+          throw new BadRequestException(
+            ZaLaResponse.BadRequest(
+              'User Not Retrived',
+              'Error occured while getting user Email',
+              '400',
+            ),
+          );
+        }
+        const email = getUserEmail[0].email;
         const existing_user = await this.userRepo.findOne({
           where: { email },
         });
