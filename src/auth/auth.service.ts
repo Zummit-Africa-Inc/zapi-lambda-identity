@@ -226,7 +226,7 @@ export class AuthService {
         },
       });
 
-      if (getAccessToken.status !== 200) {
+      if (getAccessToken.data.error) {
         throw new BadRequestException(
           ZaLaResponse.BadRequest(
             'Token Not Retrived',
@@ -248,7 +248,7 @@ export class AuthService {
           },
         });
 
-        if (getUserData.status !== 200) {
+        if (getUserData.data.error) {
           throw new BadRequestException(
             ZaLaResponse.BadRequest(
               'User Not Retrived',
@@ -269,7 +269,7 @@ export class AuthService {
           },
         });
 
-        if (getUserEmail.status !== 200) {
+        if (getUserEmail.data.error) {
           throw new BadRequestException(
             ZaLaResponse.BadRequest(
               'User Not Retrived',
@@ -278,7 +278,7 @@ export class AuthService {
             ),
           );
         }
-        const email = getUserEmail[0].email;
+        const email = getUserEmail.data[0].email;
         const existing_user = await this.userRepo.findOne({
           where: { email },
         });
