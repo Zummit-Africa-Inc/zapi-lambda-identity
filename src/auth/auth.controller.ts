@@ -7,7 +7,7 @@ import {
   Patch,
   Headers,
   Inject,
-  Param,
+ 
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -22,7 +22,7 @@ import { User } from 'src/entities/user.entity';
 import { ClientProxy } from '@nestjs/microservices';
 import { DeleteUserDto, UserSignupDto } from './dto/user-signup.dto';
 import { TestDto } from './dto/test.dto';
-import { GoogleSigninDto } from './dto/google-signin.dto';
+import { OAuthDto } from './dto/oAuth.dto';
 
 @ApiTags('Auth-Users')
 @Controller('auth')
@@ -57,10 +57,24 @@ export class AuthController {
   @Post('/google')
   @ApiOperation({ summary: 'Google user Signin' })
   async googleSignIn(
-    @Body() dto: GoogleSigninDto,
+    @Body() dto: OAuthDto,
     @Req() req: Request,
   ): Promise<Ok<userSignInType>> {
     const userSignIn = await this.authService.googleSignin(dto, {
+      userAgent: req.headers['user-agent'],
+      ipAddress: req.ip,
+    });
+
+    return ZaLaResponse.Ok(userSignIn, 'Successfully logged in', 201);
+  }
+
+  @Post('/github')
+  @ApiOperation({ summary: 'Github user signin' })
+  async githubAccess(
+    @Body() dto: OAuthDto,
+    @Req() req: Request,
+  ): Promise<Ok<userSignInType>> {
+    const userSignIn = await this.authService.githuAccessToken(dto, {
       userAgent: req.headers['user-agent'],
       ipAddress: req.ip,
     });

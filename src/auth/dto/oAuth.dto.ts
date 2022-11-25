@@ -1,8 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsOptional, IsString } from 'class-validator';
-import { UserInfo } from './../../user/dto/userInfo.dto';
+import { UserInfo } from '../../user/dto/userInfo.dto';
 
-export class GoogleSigninDto {
+export class OAuthDto {
   @IsString()
   @ApiProperty()
   token: string;
