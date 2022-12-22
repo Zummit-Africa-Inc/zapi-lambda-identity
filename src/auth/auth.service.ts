@@ -392,6 +392,7 @@ export class AuthService {
         userAgent: values.userAgent,
         ipAddress: values.ipAddress,
         profileId: user.profileID,
+        isAdmin: user.isAdmin,
         id: user.id,
       };
 
