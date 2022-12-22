@@ -24,6 +24,9 @@ export class User extends SharedEntity {
   @Column({ nullable: true })
   profileID?: string;
 
+  @Column({ default: false })
+  isAdmin: boolean;
+
   @Column({ unique: true, nullable: true })
   @Exclude()
   refreshToken?: string;
