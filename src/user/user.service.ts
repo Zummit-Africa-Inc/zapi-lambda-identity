@@ -4,20 +4,26 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import * as moment from 'moment';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AxiosResponse } from 'axios';
 import { lastValueFrom } from 'rxjs';
 import { configConstant } from 'src/common/constants/config.constant';
 import { ZaLaResponse } from 'src/common/helpers/response';
-import { Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
 import { LoginHistory } from '../entities/loginHistory.entity';
+import { User} from '../entities/user.entity'
+import { UserRole } from '../common/enums/userRole.enum'
+import { IsDate } from 'class-validator';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(LoginHistory)
     private readonly loginHistoryRepo: Repository<LoginHistory>,
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
     private readonly httpService: HttpService,
     private readonly configService: ConfigService
   ) {}
@@ -65,4 +71,69 @@ export class UserService {
     }
   }
 
+  async makeUserAnAdmin(id: string): Promise<User> {
+    try {
+      const user = await this.userRepo.findOne({
+        where: { id },
+      });
+
+      if (!user) {
+        throw new NotFoundException(
+          ZaLaResponse.NotFoundRequest(
+            'Internal server error',
+            'user not found',
+            '404',
+          ),
+        );
+      }
+      await this.userRepo.update(user.id,{user_role: UserRole.admin, isAdmin: true} )
+      const updatedUser = await this.userRepo.findOne({where:{id}})
+      return updatedUser;
+    } catch (error) {
+      throw new BadRequestException(
+        ZaLaResponse.BadRequest('internal Server error', error.message, '500'),
+      );
+    }
+  }
+
+  async getallUsers(dateFrom: string): Promise<User[]> {
+    try {
+      let registeredUsers : User[]
+      
+      if( dateFrom !== undefined){
+        const date =new Date(dateFrom)
+        registeredUsers = await this.userRepo.find({
+          where: {
+            user_role: UserRole.user,
+            isEmailVerified: false,
+            createdOn: Between( date, moment().toDate())
+          }
+        })
+      } else{
+        registeredUsers = await this.userRepo.find({
+          where: { 
+            user_role: UserRole.user,
+            isEmailVerified: false
+          },
+        });
+      }
+
+      if (registeredUsers.length < 1) {
+        throw new NotFoundException(
+          ZaLaResponse.NotFoundRequest(
+            'Internal server error',
+            'users not found',
+            '404',
+          ),
+        );
+      }  
+      return registeredUsers;
+    } catch (error) {
+      throw new BadRequestException(
+        ZaLaResponse.BadRequest('internal Server error', error.message, '500'),
+      );
+    }
+  }
+
 }
+
