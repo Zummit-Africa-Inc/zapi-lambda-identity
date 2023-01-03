@@ -105,7 +105,7 @@ export class UserService {
         registeredUsers = await this.userRepo.find({
           where: {
             user_role: UserRole.user,
-            isEmailVerified: false,
+            isEmailVerified: true,
             createdOn: Between( date, moment().toDate())
           }
         })
@@ -113,7 +113,7 @@ export class UserService {
         registeredUsers = await this.userRepo.find({
           where: { 
             user_role: UserRole.user,
-            isEmailVerified: false
+            isEmailVerified: true
           },
         });
       }
