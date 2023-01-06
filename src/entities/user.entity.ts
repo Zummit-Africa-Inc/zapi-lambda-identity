@@ -3,6 +3,8 @@ import { Exclude } from 'class-transformer';
 import { randomBytes, pbkdf2Sync } from 'crypto';
 import { SharedEntity } from '../common/model/sharedEntity';
 import { LoginHistory } from './loginHistory.entity';
+import { UserRole } from '../common/enums/userRole.enum'
+
 
 @Entity()
 export class User extends SharedEntity {
@@ -23,6 +25,16 @@ export class User extends SharedEntity {
 
   @Column({ nullable: true })
   profileID?: string;
+
+  @Column({ default: false })
+  isAdmin: boolean;
+
+  @Column({
+    type: 'enum',
+    enum: UserRole,
+    default: UserRole.user
+  })
+  user_role: UserRole
 
   @Column({ unique: true, nullable: true })
   @Exclude()
