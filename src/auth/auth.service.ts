@@ -165,9 +165,9 @@ export class AuthService {
           email: email,
           fullName: name,
           isGoogleAuthUser: true,
+          isEmailVerified: true,
+          userOTP: null,
         });
-
-        await this.emailVerificationService.markEmailAsConfirmed(newUser.email);
 
         let userProfile =
           await this.emailVerificationService.createGoogleUserProfile(newUser);
@@ -304,9 +304,10 @@ export class AuthService {
       email: email,
       fullName: name,
       isGoogleAuthUser: true,
+      isEmailVerified: true,
+      userOTP: null,
     });
 
-    await this.emailVerificationService.markEmailAsConfirmed(newUser.email);
     let userProfile =
       await this.emailVerificationService.createGoogleUserProfile(newUser);
     const profileID = userProfile.data.id;
