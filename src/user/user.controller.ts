@@ -3,7 +3,7 @@ import { UserService } from './user.service';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { LoginHistory } from '../entities/loginHistory.entity';
 import { User} from '../entities/user.entity'
-import { ZaLaResponse, Ok } from 'src/common/helpers/response';
+import { ZaLaResponse, Ok } from '../common/helpers/response';
 import { AxiosResponse } from 'axios';
 
 @ApiTags('Users')
