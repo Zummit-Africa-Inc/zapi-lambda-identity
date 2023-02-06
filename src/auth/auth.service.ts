@@ -165,6 +165,8 @@ export class AuthService {
           email: email,
           fullName: name,
           isGoogleAuthUser: true,
+          isEmailVerified: true,
+          userOTP: null,
         });
 
         let userProfile =
@@ -302,6 +304,8 @@ export class AuthService {
       email: email,
       fullName: name,
       isGoogleAuthUser: true,
+      isEmailVerified: true,
+      userOTP: null,
     });
 
     let userProfile =
@@ -392,6 +396,7 @@ export class AuthService {
         userAgent: values.userAgent,
         ipAddress: values.ipAddress,
         profileId: user.profileID,
+        isAdmin: user.isAdmin,
         id: user.id,
       };
 

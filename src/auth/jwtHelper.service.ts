@@ -51,6 +51,7 @@ export class JwtHelperService {
         userAgent: value.userAgent,
         ipAddress: value.ipAddress,
         profileId: user.profileID,
+        isAdmin: user.isAdmin,
         id: user.id,
       };
       return {
@@ -234,4 +235,3 @@ export class JwtHelperService {
     }
   }
 }
-
