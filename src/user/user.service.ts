@@ -13,9 +13,8 @@ import { configConstant } from 'src/common/constants/config.constant';
 import { ZaLaResponse } from 'src/common/helpers/response';
 import { Between, Repository } from 'typeorm';
 import { LoginHistory } from '../entities/loginHistory.entity';
-import { User} from '../entities/user.entity'
-import { UserRole } from '../common/enums/userRole.enum'
-import { IsDate } from 'class-validator';
+import { User } from '../entities/user.entity';
+import { UserRole } from '../common/enums/userRole.enum';
 
 @Injectable()
 export class UserService {
@@ -25,7 +24,7 @@ export class UserService {
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
     private readonly httpService: HttpService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
   ) {}
 
   /**
@@ -56,18 +55,22 @@ export class UserService {
       );
     }
   }
-///ws-notify/subscription-event
-  async testSubscription(): Promise<AxiosResponse<any>>{
-    try{
+  ///ws-notify/subscription-event
+  async testSubscription(): Promise<AxiosResponse<any>> {
+    try {
       const payload = {
-        apiId: "api",
-        profileId: "profile",
-        developerId: "b77dc7ec-74df-4fa5-ba32-b50fede35785"
-      }
-      const url = this.configService.get(configConstant.baseUrls.notificationService)
-      return await lastValueFrom(this.httpService.post(`${url}/ws-notify/subscription-event`,payload) )
-    }catch(err){
-      console.log(err)
+        apiId: 'api',
+        profileId: 'profile',
+        developerId: 'b77dc7ec-74df-4fa5-ba32-b50fede35785',
+      };
+      const url = this.configService.get(
+        configConstant.baseUrls.notificationService,
+      );
+      return await lastValueFrom(
+        this.httpService.post(`${url}/ws-notify/subscription-event`, payload),
+      );
+    } catch (err) {
+      console.log(err);
     }
   }
 
@@ -86,8 +89,11 @@ export class UserService {
           ),
         );
       }
-      await this.userRepo.update(user.id,{user_role: UserRole.admin, isAdmin: true} )
-      const updatedUser = await this.userRepo.findOne({where:{id}})
+      await this.userRepo.update(user.id, {
+        user_role: UserRole.admin,
+        isAdmin: true,
+      });
+      const updatedUser = await this.userRepo.findOne({ where: { id } });
       return updatedUser;
     } catch (error) {
       throw new BadRequestException(
@@ -96,44 +102,43 @@ export class UserService {
     }
   }
 
-  async getallUsers(dateFrom: string): Promise<User[]> {
+  async getallUsers(start_date: string): Promise<any> {
     try {
-      let registeredUsers : User[]
-      
-      if( dateFrom !== undefined){
-        const date =new Date(dateFrom)
-        registeredUsers = await this.userRepo.find({
-          where: {
-            user_role: UserRole.user,
-            isEmailVerified: true,
-            createdOn: Between( date, moment().toDate())
-          }
-        })
-      } else{
-        registeredUsers = await this.userRepo.find({
-          where: { 
-            user_role: UserRole.user,
-            isEmailVerified: true
-          },
+      let query = this.userRepo
+        .createQueryBuilder('user')
+        .where('user.isEmailVerified = :isEmailVerified', {
+          isEmailVerified: true,
         });
+
+      if (start_date) {
+        query = query
+          .andWhere('user.createdOn >= :startDate', { start_date })
+          .andWhere('user.createdOn <= :endDate', { endDate: new Date() });
+      }
+      const users = await query
+        .select(['user.fullName', 'user.email', 'user.createdOn'])
+        .getMany();
+
+      let countQuery = this.userRepo
+        .createQueryBuilder('user')
+        .where('user.isEmailVerified = :isEmailVerified', {
+          isEmailVerified: true,
+        });
+
+      if (start_date) {
+        countQuery = countQuery
+          .andWhere('user.createdOn >= :startDate', { start_date })
+          .andWhere('user.createdOn <= :endDate', { endDate: new Date() });
       }
 
-      if (registeredUsers.length < 1) {
-        throw new NotFoundException(
-          ZaLaResponse.NotFoundRequest(
-            'Internal server error',
-            'users not found',
-            '404',
-          ),
-        );
-      }  
-      return registeredUsers;
+      const userCount = await countQuery.getCount();
+
+      return { userCount, users };
     } catch (error) {
+      console.log(error);
       throw new BadRequestException(
         ZaLaResponse.BadRequest('internal Server error', error.message, '500'),
       );
     }
   }
-
 }
-

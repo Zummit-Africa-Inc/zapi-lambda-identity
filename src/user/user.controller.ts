@@ -2,7 +2,7 @@ import { Controller, Get, Param, Patch, Query } from '@nestjs/common';
 import { UserService } from './user.service';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { LoginHistory } from '../entities/loginHistory.entity';
-import { User} from '../entities/user.entity'
+import { User } from '../entities/user.entity';
 import { ZaLaResponse, Ok } from 'src/common/helpers/response';
 import { AxiosResponse } from 'axios';
 
@@ -31,20 +31,15 @@ export class UserController {
 
   @Patch('make-admin/:userId')
   @ApiOperation({ summary: 'Convert An Existing User To An Admin' })
-  async makeAdmin(
-    @Param('userId') id: string,
-  ): Promise<Ok<User>> {
-    const admin =  await this.userService.makeUserAnAdmin(id)
-    return ZaLaResponse.Ok(admin, 'Admin Created', 201)
+  async makeAdmin(@Param('userId') id: string): Promise<Ok<User>> {
+    const admin = await this.userService.makeUserAnAdmin(id);
+    return ZaLaResponse.Ok(admin, 'Admin Created', 201);
   }
 
   @Get('all-registered-users')
   @ApiOperation({ summary: 'Get All Registered Users' })
-  async getAllUsers(
-    @Query('date-from') dateFrom: string
-  ): Promise<Ok<User[]>> {
-    const allUsers =  await this.userService.getallUsers(dateFrom)
-    return ZaLaResponse.Ok(allUsers, 'Users Retreived Successfully', 200)
+  async getAllUsers(@Param('start_date') start_date: string): Promise<Ok<any>> {
+    const allUsers = await this.userService.getallUsers(start_date);
+    return ZaLaResponse.Ok(allUsers, 'Users Retreived Successfully', 200);
   }
-
 }
