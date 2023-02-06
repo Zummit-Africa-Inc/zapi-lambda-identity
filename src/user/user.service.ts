@@ -9,8 +9,8 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AxiosResponse } from 'axios';
 import { lastValueFrom } from 'rxjs';
-import { configConstant } from 'src/common/constants/config.constant';
-import { ZaLaResponse } from 'src/common/helpers/response';
+import { configConstant } from '../common/constants/config.constant';
+import { ZaLaResponse } from '../common/helpers/response';
 import { Between, Repository } from 'typeorm';
 import { LoginHistory } from '../entities/loginHistory.entity';
 import { User} from '../entities/user.entity'
