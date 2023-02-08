@@ -42,8 +42,8 @@ export class UserController {
     const allUsers = await this.userService.getallUsers(start_date);
     return ZaLaResponse.Ok(allUsers, 'Users Retreived Successfully', 200);
   }
-  @Get('newest-ten-users')
-  @ApiOperation({ summary: 'Get All Registered Users' })
+  @Get('usersInLast30days')
+  @ApiOperation({ summary: 'Get all verified users within the last 30 days' })
   async getNewUsers(): Promise<
     Ok<{ id: string; fullName: string; email: string }[]>
   > {
