@@ -147,9 +147,7 @@ export class UserService {
    * It gets all the users who have verified their email in the last 30 days.
    * @returns An array of objects with the following properties: id, fullName, email.
    */
-  async getNewUsers(): Promise<
-    { id: string; fullName: string; email: string }[]
-  > {
+  async getNewUsers(): Promise<User[]> {
     try {
       const users = this.userRepo
         .createQueryBuilder('user')
@@ -158,15 +156,9 @@ export class UserService {
         .andWhere('user.createdOn >= :lastMonth', {
           lastMonth: subDays(new Date(), 30),
         })
-        .getRawMany();
+        .getMany();
 
-      const promises = (await users).map((user) => ({
-        id: user.user_id,
-        fullName: user.user_fullName,
-        email: user.user_email,
-      }));
-
-      return await Promise.all(promises);
+      return await users;
     } catch (error) {
       throw new BadRequestException(
         ZaLaResponse.BadRequest('internal Server error', error.message, '500'),
