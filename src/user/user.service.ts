@@ -15,6 +15,7 @@ import { Between, Repository } from 'typeorm';
 import { LoginHistory } from '../entities/loginHistory.entity';
 import { User } from '../entities/user.entity';
 import { UserRole } from '../common/enums/userRole.enum';
+import { subDays } from 'date-fns';
 
 @Injectable()
 export class UserService {
@@ -136,6 +137,37 @@ export class UserService {
       return { userCount, users };
     } catch (error) {
       console.log(error);
+      throw new BadRequestException(
+        ZaLaResponse.BadRequest('internal Server error', error.message, '500'),
+      );
+    }
+  }
+
+  /**
+   * It gets all the users who have verified their email in the last 30 days.
+   * @returns An array of objects with the following properties: id, fullName, email.
+   */
+  async getNewUsers(): Promise<
+    { id: string; fullName: string; email: string }[]
+  > {
+    try {
+      const users = this.userRepo
+        .createQueryBuilder('user')
+        .select(['user.id', 'user.fullName', 'user.email'])
+        .where({ isEmailVerified: true })
+        .andWhere('user.createdOn >= :lastMonth', {
+          lastMonth: subDays(new Date(), 30),
+        })
+        .getRawMany();
+
+      const promises = (await users).map((user) => ({
+        id: user.user_id,
+        fullName: user.user_fullName,
+        email: user.user_email,
+      }));
+
+      return await Promise.all(promises);
+    } catch (error) {
       throw new BadRequestException(
         ZaLaResponse.BadRequest('internal Server error', error.message, '500'),
       );
