@@ -4,18 +4,16 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import * as moment from 'moment';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AxiosResponse } from 'axios';
 import { lastValueFrom } from 'rxjs';
 import { configConstant } from 'src/common/constants/config.constant';
 import { ZaLaResponse } from 'src/common/helpers/response';
-import { Between, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { LoginHistory } from '../entities/loginHistory.entity';
 import { User } from '../entities/user.entity';
 import { UserRole } from '../common/enums/userRole.enum';
-
 @Injectable()
 export class UserService {
   constructor(
@@ -102,7 +100,20 @@ export class UserService {
     }
   }
 
-  async getallUsers(start_date: string): Promise<any> {
+  /**
+   * It gets all users from the database, and returns the count of users, the users, and the pagination
+   * details.
+   * @param {number} page - number,
+   * @param {number} limit - number,
+   * @param {string} start_date - string,
+   * @returns paginated user array
+   *     "
+   */
+  async getallUsers(
+    page: number,
+    limit: number,
+    start_date: string,
+  ): Promise<any> {
     try {
       let query = this.userRepo
         .createQueryBuilder('user')
@@ -112,11 +123,15 @@ export class UserService {
 
       if (start_date) {
         query = query
-          .andWhere('user.createdOn >= :startDate', { start_date })
-          .andWhere('user.createdOn <= :endDate', { endDate: new Date() });
+          .andWhere('user.createdOn >= :start_date', {
+            start_date: new Date(start_date),
+          })
+          .andWhere('user.createdOn <= :end_date', { end_date: new Date() });
       }
       const users = await query
         .select(['user.fullName', 'user.email', 'user.createdOn'])
+        .offset((page - 1) * limit)
+        .limit(limit)
         .getMany();
 
       let countQuery = this.userRepo
@@ -127,15 +142,23 @@ export class UserService {
 
       if (start_date) {
         countQuery = countQuery
-          .andWhere('user.createdOn >= :startDate', { start_date })
-          .andWhere('user.createdOn <= :endDate', { endDate: new Date() });
+          .andWhere('user.createdOn >= :start_date', {
+            start_date: new Date(start_date),
+          })
+          .andWhere('user.createdOn <= :end_date', { end_date: new Date() });
       }
 
       const userCount = await countQuery.getCount();
-
-      return { userCount, users };
+      return {
+        userCount,
+        data: users,
+        pagination: {
+          total: userCount,
+          page,
+          limit,
+        },
+      };
     } catch (error) {
-      console.log(error);
       throw new BadRequestException(
         ZaLaResponse.BadRequest('internal Server error', error.message, '500'),
       );
