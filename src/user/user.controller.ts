@@ -1,10 +1,11 @@
 import { Controller, Get, Param, Patch, Query } from '@nestjs/common';
 import { UserService } from './user.service';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { LoginHistory } from '../entities/loginHistory.entity';
 import { User } from '../entities/user.entity';
 import { ZaLaResponse, Ok } from 'src/common/helpers/response';
 import { AxiosResponse } from 'axios';
+import { DefaultValuePipe, ParseIntPipe } from '@nestjs/common/pipes';
 
 @ApiTags('Users')
 @Controller('users')
@@ -38,8 +39,19 @@ export class UserController {
 
   @Get('all-registered-users')
   @ApiOperation({ summary: 'Get All Registered Users' })
-  async getAllUsers(@Param('start_date') start_date: string): Promise<Ok<any>> {
-    const allUsers = await this.userService.getallUsers(start_date);
+  @ApiQuery({ name: 'start_date', required: false, type: String })
+  @ApiQuery({ name: 'page', required: false, type: String })
+  @ApiQuery({ name: 'limit', required: false, type: String })
+  async getAllUsers(
+    @Query('page', new DefaultValuePipe(1)) page: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+    @Query('start_date') start_date?: string,
+  ): Promise<Ok<any>> {
+    const allUsers = await this.userService.getallUsers(
+      page,
+      limit,
+      start_date,
+    );
     return ZaLaResponse.Ok(allUsers, 'Users Retreived Successfully', 200);
   }
 }
