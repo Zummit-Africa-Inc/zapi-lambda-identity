@@ -27,6 +27,7 @@ export class JwtHelperService {
     userAgent: string;
     ipAddress: string;
     id: string;
+    profileId: string;
   }) {
     try {
       return this.jwTokenService.sign(payload, {
@@ -127,6 +128,8 @@ export class JwtHelperService {
         },
       });
       if (verified) {
+        // add the user profileId to the jwt-payload object before signing the jwt
+        payload.profileId = verified.profileID;
         return {
           access: await this.signAccess(payload),
         };

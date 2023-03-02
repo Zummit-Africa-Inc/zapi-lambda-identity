@@ -100,6 +100,14 @@ export class AuthService {
           ZaLaResponse.BadRequest('Access Denied!', 'Incorrect Credentials'),
         );
 
+      // check if user has verified their email address
+      if (!user.isEmailVerified)
+        throw new BadRequestException(
+          ZaLaResponse.BadRequest(
+            'Access Denied!',
+            'Verify your email to continue',
+          ),
+        );
       // generate access and refrest token for successful logedIn user
       const tokens = await this.getNewRefreshAndAccessTokens(values, user);
 
@@ -114,6 +122,9 @@ export class AuthService {
       });
       await this.userHistoryRepo.save(createHistory);
       user.refreshToken = tokens.refresh;
+
+      // save the user refreshToken to the db after updating it
+      await this.userRepo.update(user.id, { refreshToken: user.refreshToken });
 
       return {
         ...tokens,
@@ -173,11 +184,12 @@ export class AuthService {
           await this.emailVerificationService.createGoogleUserProfile(newUser);
         const profileID = userProfile.data.id;
 
+        // Add the profileId to the user object before signing the token
+        newUser.profileID = profileID;
         const tokens = await this.jwtHelperService.googleUserTokens(
           values,
           newUser,
         );
-        newUser.profileID = profileID;
         newUser.refreshToken = tokens.refresh;
         await this.userRepo.save(newUser);
         this.createLoginHistory(dto.userInfo, newUser);
@@ -312,11 +324,12 @@ export class AuthService {
       await this.emailVerificationService.createGoogleUserProfile(newUser);
     const profileID = userProfile.data.id;
 
+    // Add the profileId to the user object before signing the token
+    newUser.profileID = profileID;
     const tokens = await this.jwtHelperService.googleUserTokens(
       values,
       newUser,
     );
-    newUser.profileID = profileID;
     newUser.refreshToken = tokens.refresh;
     await this.userRepo.save(newUser);
     this.createLoginHistory(dto.userInfo, newUser);
