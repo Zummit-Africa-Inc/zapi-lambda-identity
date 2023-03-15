@@ -205,6 +205,7 @@ export class EmailVerificationService {
         {
           email: newUser.email,
           userId: newUser.id,
+          fullName: newUser.fullName
         },
         {
           headers: headers,
