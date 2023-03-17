@@ -64,7 +64,7 @@ export class EmailVerificationService {
       const notificationUrl = `${this.configService.get<string>(
         configConstant.baseUrls.notificationService,
       )}/email/confirmation`;
-      console.log(notificationUrl);
+
       this.httpService.axiosRef
         .post(notificationUrl, mailPayload)
         .catch((error) => {
