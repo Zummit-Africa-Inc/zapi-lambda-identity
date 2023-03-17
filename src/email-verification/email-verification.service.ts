@@ -61,7 +61,17 @@ export class EmailVerificationService {
         text: emailBody,
       };
 
-      this.sendMail('mail', mailPayload);
+      const notificationUrl = `${this.configService.get<string>(
+        configConstant.baseUrls.notificationService,
+      )}/email/confirmation`;
+
+      this.httpService.axiosRef
+        .post(notificationUrl, mailPayload)
+        .catch((error) => {
+          console.log(error.message);
+        });
+
+      // this.sendMail('mail', mailPayload);
     } catch (error) {
       throw new BadRequestException(
         ZaLaResponse.BadRequest('Internal Server Error', error.message, '500'),
@@ -205,6 +215,7 @@ export class EmailVerificationService {
         {
           email: newUser.email,
           userId: newUser.id,
+          fullName: newUser.fullName,
         },
         {
           headers: headers,
@@ -251,6 +262,7 @@ export class EmailVerificationService {
         {
           email: newUser.email,
           userId: newUser.id,
+          fullName: newUser.fullName,
         },
         {
           headers: headers,
@@ -303,8 +315,12 @@ export class EmailVerificationService {
         text: text,
       };
 
-      await this.sendMail('mail', mailData);
+      // await this.sendMail('mail', mailData);
 
+      const notificationUrl = `${this.configService.get<string>(
+        configConstant.baseUrls.notificationService,
+      )}/email/confirmation`;
+      this.httpService.axiosRef.post(notificationUrl, mailData);
       return `Reset OTP successfully sent to ${userEmail}`;
     } catch (error) {
       throw new BadRequestException(
@@ -319,13 +335,13 @@ export class EmailVerificationService {
    * @param {object} body - body of the message
    */
 
-  async sendMail(pattern: string, payload: object): Promise<void> {
-    try {
-      this.n_client.emit(pattern, payload);
-    } catch (error) {
-      throw new BadRequestException(
-        ZaLaResponse.BadRequest('Internal Server error', error.message, '500'),
-      );
-    }
-  }
+  // async sendMail(pattern: string, payload: object): Promise<void> {
+  //   try {
+  //     this.n_client.emit(pattern, payload);
+  //   } catch (error) {
+  //     throw new BadRequestException(
+  //       ZaLaResponse.BadRequest('Internal Server error', error.message, '500'),
+  //     );
+  //   }
+  // }
 }
