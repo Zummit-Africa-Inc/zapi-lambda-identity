@@ -61,7 +61,12 @@ export class EmailVerificationService {
         text: emailBody,
       };
 
-      this.sendMail('mail', mailPayload);
+      const notificationUrl = `${this.configService.get<string>(
+        configConstant.baseUrls.notificationService,
+      )}/email/mail`;
+
+      const mailRes = this.httpService.post(notificationUrl, mailPayload);
+      await lastValueFrom(mailRes.pipe());
     } catch (error) {
       throw new BadRequestException(
         ZaLaResponse.BadRequest('Internal Server Error', error.message, '500'),
@@ -303,7 +308,12 @@ export class EmailVerificationService {
         text: text,
       };
 
-      await this.sendMail('mail', mailData);
+      const notificationUrl = `${this.configService.get<string>(
+        configConstant.baseUrls.notificationService,
+      )}/email/mail`;
+
+      const mailRes = this.httpService.post(notificationUrl, mailData);
+      await lastValueFrom(mailRes.pipe());
 
       return `Reset OTP successfully sent to ${userEmail}`;
     } catch (error) {
@@ -313,19 +323,19 @@ export class EmailVerificationService {
     }
   }
 
-  /**
-   * It sends a message to notification service using rabbitMQ client
-   * @param {string} pattern - The pattern to send the message to.
-   * @param {object} body - body of the message
-   */
+  // /**
+  //  * It sends a message to notification service using rabbitMQ client
+  //  * @param {string} pattern - The pattern to send the message to.
+  //  * @param {object} body - body of the message
+  //  */
 
-  async sendMail(pattern: string, payload: object): Promise<void> {
-    try {
-      this.n_client.emit(pattern, payload);
-    } catch (error) {
-      throw new BadRequestException(
-        ZaLaResponse.BadRequest('Internal Server error', error.message, '500'),
-      );
-    }
-  }
+  // async sendMail(pattern: string, payload: object): Promise<void> {
+  //   try {
+  //     this.n_client.emit(pattern, payload);
+  //   } catch (error) {
+  //     throw new BadRequestException(
+  //       ZaLaResponse.BadRequest('Internal Server error', error.message, '500'),
+  //     );
+  //   }
+  // }
 }
