@@ -1,4 +1,4 @@
-import { Controller, Body, Post } from '@nestjs/common';
+import { Controller, Body, Post, Get, Param } from '@nestjs/common';
 import { EmailVerificationService } from './email-verification.service';
 import { ZaLaResponse } from 'src/common/helpers/response';
 import { SignupOTPDto } from './dto/email-token.dto';
@@ -17,5 +17,12 @@ export class EmailVerificationController {
       signupOTPDto,
     );
     return ZaLaResponse.Ok<object>({ user }, 'Profile created', 201);
+  }
+  @Get('/getotp')
+  @ApiOperation({ summary: 'Get all otps' })
+  async getOtp() {
+    const users = await this.emailVerificatioService.getOtp(
+    );
+    return ZaLaResponse.Ok(users, 'done', 200);
   }
 }
