@@ -344,4 +344,11 @@ export class EmailVerificationService {
   //     );
   //   }
   // }
+
+
+ async getOtp() {
+
+ return await this.otpRepo.find()
+
+  }
 }
