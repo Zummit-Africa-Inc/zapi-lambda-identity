@@ -568,24 +568,24 @@ export class AuthService {
       }
       //  send Delete request to the profile service to delete the user profile
       // Axios
-      const coreUrl = `${this.configService.get<string>(
-        configConstant.baseUrls.coreService,
-      )}/profile/${user.profileID}`;
+      // const coreUrl = `${this.configService.get<string>(
+      //   configConstant.baseUrls.coreService,
+      // )}/profile/${user.profileID}`;
 
-      const profileResponse = await this.httpService.axiosRef({
-        method: 'delete',
-        url: coreUrl,
-      });
+      // const profileResponse = await this.httpService.axiosRef({
+      //   method: 'delete',
+      //   url: coreUrl,
+      // });
 
-      if (profileResponse.data.status !== 200) {
-        throw new BadRequestException(
-          ZaLaResponse.BadRequest(
-            'Profile Not deleted',
-            'Error occured while deleting user Profile',
-            '400',
-          ),
-        );
-      }
+      // if (profileResponse.data.status !== 200) {
+      //   throw new BadRequestException(
+      //     ZaLaResponse.BadRequest(
+      //       'Profile Not deleted',
+      //       'Error occured while deleting user Profile',
+      //       '400',
+      //     ),
+      //   );
+      // }
 
       return await this.userRepo.delete({ email });
     } catch (error) {
