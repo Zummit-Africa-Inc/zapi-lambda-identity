@@ -43,30 +43,23 @@ export class AuthService {
       where: { email: user.email },
     });
     if (userExists) {
-      throw new BadRequestException(
-        ZaLaResponse.BadRequest(
-          'Duplicate Values',
-          'The Email already exists',
-          '400',
-        ),
-      );
+      if (userExists.isEmailVerified) {
+        throw new BadRequestException(
+          ZaLaResponse.BadRequest(
+            'Duplicate Values',
+            'The Email already exists',
+            '400',
+          ),
+        );
+      } else {
+        await this.emailVerificationService.sendVerificationLink(user.email);
+        return 'User Already exist, check your email to complete the sign up';
+      }
     }
     const newUser = this.userRepo.create(user);
     await this.userRepo.save(newUser);
     await this.emailVerificationService.sendVerificationLink(user.email);
     return 'Signup Successful, check your email to complete the sign up';
-    // const newUser = await this.userRepo.save(userdata).catch(async (error) => {
-    //   this.emailVerificationService.resendVerificationLink(user.email);
-    //   throw new BadRequestException(
-    //     ZaLaResponse.BadRequest(
-    //       'Duplicate Values',
-    //       'The Email already exists',
-    //       error.errorCode,
-    //     ),
-    //   );
-    // });
-    // await this.emailVerificationService.sendVerificationLink(newUser.email);
-    // return 'Signup Successful, check your email to complete the sign up';
   }
 
   /**
