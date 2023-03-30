@@ -81,6 +81,17 @@ export class AuthService {
           ZaLaResponse.BadRequest('Not found', 'Invalid Credentials!'),
         );
 
+      // check if user has verified their email address
+      if (!user.isEmailVerified) {
+        await this.emailVerificationService.sendVerificationLink(user.email);
+
+        throw new BadRequestException(
+          ZaLaResponse.BadRequest(
+            'Access Denied!',
+            'Check your Email to Verify your account',
+          ),
+        );
+      }
       // compare user password with the has password and check if it corresponds
       const hash = await this.jwtHelperService.hashPassword(
         dto.password,
@@ -93,14 +104,6 @@ export class AuthService {
           ZaLaResponse.BadRequest('Access Denied!', 'Incorrect Credentials'),
         );
 
-      // check if user has verified their email address
-      if (!user.isEmailVerified)
-        throw new BadRequestException(
-          ZaLaResponse.BadRequest(
-            'Access Denied!',
-            'Verify your email to continue',
-          ),
-        );
       // generate access and refrest token for successful logedIn user
       const tokens = await this.getNewRefreshAndAccessTokens(values, user);
 
