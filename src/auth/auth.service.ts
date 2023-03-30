@@ -2,6 +2,7 @@ import {
   Injectable,
   BadRequestException,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { UserSignupDto } from './dto/user-signup.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -53,6 +54,13 @@ export class AuthService {
         );
       } else {
         await this.emailVerificationService.sendVerificationLink(user.email);
+        throw new UnauthorizedException(
+          ZaLaResponse.BadRequest(
+            'Access Denied!',
+            'User Already exist, check your email to complete the sign up',
+            '401',
+          ),
+        );
         return 'User Already exist, check your email to complete the sign up';
       }
     }
@@ -85,7 +93,7 @@ export class AuthService {
       if (!user.isEmailVerified) {
         await this.emailVerificationService.sendVerificationLink(user.email);
 
-        throw new BadRequestException(
+        throw new UnauthorizedException(
           ZaLaResponse.BadRequest(
             'Access Denied!',
             'Check your Email to Verify your account',
