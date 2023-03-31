@@ -7,7 +7,6 @@ import {
   Patch,
   Headers,
   Inject,
- 
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -50,6 +49,7 @@ export class AuthController {
       userAgent: req.headers['user-agent'],
       ipAddress: req.ip,
     });
+    console.log(userSignIn);
 
     return ZaLaResponse.Ok(userSignIn, 'Successfully logged in', 201);
   }
@@ -119,9 +119,7 @@ export class AuthController {
 
   @Post('/reset')
   @ApiOperation({ summary: 'Reset password' })
-  async resetPassword(
-    @Body() body: PasswordResetDto,
-  ): Promise<Ok<User>> {
+  async resetPassword(@Body() body: PasswordResetDto): Promise<Ok<User>> {
     const updatedUser = await this.authService.resetPassword(body);
     return ZaLaResponse.Ok(
       updatedUser,

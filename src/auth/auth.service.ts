@@ -61,7 +61,6 @@ export class AuthService {
             '401',
           ),
         );
-        return 'User Already exist, check your email to complete the sign up';
       }
     }
     const newUser = this.userRepo.create(user);
@@ -92,13 +91,7 @@ export class AuthService {
       // check if user has verified their email address
       if (!user.isEmailVerified) {
         await this.emailVerificationService.sendVerificationLink(user.email);
-
-        throw new UnauthorizedException(
-          ZaLaResponse.BadRequest(
-            'Access Denied!',
-            'Check your Email to Verify your account',
-          ),
-        );
+        return { ...user, isEmailVerified: false };
       }
       // compare user password with the has password and check if it corresponds
       const hash = await this.jwtHelperService.hashPassword(
