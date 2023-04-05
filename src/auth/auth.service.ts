@@ -129,6 +129,7 @@ export class AuthService {
         profileId: user.profileID,
         email: user.email,
         fullName: user.fullName,
+        isEmailVerified: true,
       };
     } catch (error) {
       throw new BadRequestException(
