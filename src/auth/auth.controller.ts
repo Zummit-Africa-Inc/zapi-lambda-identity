@@ -49,7 +49,6 @@ export class AuthController {
       userAgent: req.headers['user-agent'],
       ipAddress: req.ip,
     });
-    console.log(userSignIn);
 
     return ZaLaResponse.Ok(userSignIn, 'Successfully logged in', 201);
   }
