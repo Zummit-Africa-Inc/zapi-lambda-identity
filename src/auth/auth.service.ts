@@ -2,6 +2,7 @@ import {
   Injectable,
   BadRequestException,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { UserSignupDto } from './dto/user-signup.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -43,30 +44,29 @@ export class AuthService {
       where: { email: user.email },
     });
     if (userExists) {
-      throw new BadRequestException(
-        ZaLaResponse.BadRequest(
-          'Duplicate Values',
-          'The Email already exists',
-          '400',
-        ),
-      );
+      if (userExists.isEmailVerified) {
+        throw new BadRequestException(
+          ZaLaResponse.BadRequest(
+            'Duplicate Values',
+            'The Email already exists',
+            '400',
+          ),
+        );
+      } else {
+        await this.emailVerificationService.sendVerificationLink(user.email);
+        throw new UnauthorizedException(
+          ZaLaResponse.BadRequest(
+            'Access Denied!',
+            'User Already exist, check your email to complete the sign up',
+            '401',
+          ),
+        );
+      }
     }
     const newUser = this.userRepo.create(user);
     await this.userRepo.save(newUser);
     await this.emailVerificationService.sendVerificationLink(user.email);
     return 'Signup Successful, check your email to complete the sign up';
-    // const newUser = await this.userRepo.save(userdata).catch(async (error) => {
-    //   this.emailVerificationService.resendVerificationLink(user.email);
-    //   throw new BadRequestException(
-    //     ZaLaResponse.BadRequest(
-    //       'Duplicate Values',
-    //       'The Email already exists',
-    //       error.errorCode,
-    //     ),
-    //   );
-    // });
-    // await this.emailVerificationService.sendVerificationLink(newUser.email);
-    // return 'Signup Successful, check your email to complete the sign up';
   }
 
   /**
@@ -88,6 +88,11 @@ export class AuthService {
           ZaLaResponse.BadRequest('Not found', 'Invalid Credentials!'),
         );
 
+      // check if user has verified their email address
+      if (!user.isEmailVerified) {
+        await this.emailVerificationService.sendVerificationLink(user.email);
+        return { ...user, isEmailVerified: false };
+      }
       // compare user password with the has password and check if it corresponds
       const hash = await this.jwtHelperService.hashPassword(
         dto.password,
@@ -100,14 +105,6 @@ export class AuthService {
           ZaLaResponse.BadRequest('Access Denied!', 'Incorrect Credentials'),
         );
 
-      // check if user has verified their email address
-      if (!user.isEmailVerified)
-        throw new BadRequestException(
-          ZaLaResponse.BadRequest(
-            'Access Denied!',
-            'Verify your email to continue',
-          ),
-        );
       // generate access and refrest token for successful logedIn user
       const tokens = await this.getNewRefreshAndAccessTokens(values, user);
 
@@ -132,6 +129,7 @@ export class AuthService {
         profileId: user.profileID,
         email: user.email,
         fullName: user.fullName,
+        isEmailVerified: true,
       };
     } catch (error) {
       throw new BadRequestException(
